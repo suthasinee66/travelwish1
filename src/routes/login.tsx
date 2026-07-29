@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plane } from "lucide-react";
-
+import { signIn, signInWithGoogle } from "@/services/auth";
+import { useNavigate } from "@tanstack/react-router";
+import { supabase } from "@/lib/supabase";
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
@@ -22,10 +24,24 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: เชื่อมต่อระบบยืนยันตัวตนจริงเมื่อเปิดใช้งาน Lovable Cloud
-    console.log("login", { email, password });
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      alert("Login ไม่สำเร็จ: " + error.message);
+      return;
+    }
+
+    if (data.user) {
+      navigate({ to: "/home" });
+    }
   };
 
   return (
@@ -87,9 +103,20 @@ function LoginPage() {
                   required
                 />
               </div>
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full" >
                 เข้าสู่ระบบ
+                
               </Button>
+              <Button
+  type="button"
+  variant="outline"
+  className="w-full mt-2"
+  onClick={async () => {
+    await signInWithGoogle();
+  }}
+>
+  เข้าสู่ระบบด้วย Google
+</Button>
               <p className="text-center text-sm text-muted-foreground">
                 ยังไม่มีบัญชี?{" "}
                 <Link to="/register" className="font-medium text-foreground underline-offset-4 hover:underline">

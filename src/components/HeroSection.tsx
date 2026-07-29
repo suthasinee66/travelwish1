@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import heroImg from "@/assets/hero-travel.jpg";
+import { createFileRoute, Link } from "@tanstack/react-router";
 
 
 interface HeroSectionProps {
@@ -31,12 +32,9 @@ const HeroSection = () => {
           Get personalized travel recommendations based on your interests.
         </p>
 
-        <button
-  onClick={() => navigate("/login")}
-  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 py-4 rounded-full"
->
-  Start Exploring
-</button>
+        <Link to="/login" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 py-4 rounded-full">
+                    Start Exploring
+                  </Link>
       </div>
     </section>
   );

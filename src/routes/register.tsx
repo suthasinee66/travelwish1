@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plane, UserPlus } from "lucide-react";
-
+import { supabase } from "@/lib/supabase";
+import { signInWithGoogle } from "@/services/auth";
 export const Route = createFileRoute("/register")({
   head: () => ({
     meta: [
@@ -114,6 +115,16 @@ function RegisterPage() {
                 <UserPlus className="h-4 w-4" />
                 สมัครสมาชิก
               </Button>
+              <Button
+  type="button"
+  variant="outline"
+  className="w-full mt-2"
+  onClick={async () => {
+    await signInWithGoogle();
+  }}
+>
+  เข้าสู่ระบบด้วย Google
+</Button>
               <p className="text-center text-sm text-muted-foreground">
                 มีบัญชีอยู่แล้ว?{" "}
                 <Link to="/login" className="font-medium text-foreground underline-offset-4 hover:underline">
