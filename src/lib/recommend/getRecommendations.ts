@@ -110,7 +110,8 @@ const topPlaces = recommendations
           p.name_th === place.name_th &&
           p.province === place.province
       )
-  );
+  )
+  .slice(0, 50);;
 
 
 

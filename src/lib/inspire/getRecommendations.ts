@@ -4,6 +4,7 @@ import { buildQuery } from "./buildQuery";
 export async function getRecommendations(pref: any) {
   const query = buildQuery(pref);
 
+  console.log("YOUTUBE QUERY:", query);
   const res = await fetch(
     `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${encodeURIComponent(
       query
@@ -22,5 +23,6 @@ return data.items.map((item: any) => ({
   title: item.snippet.title,
   thumbnail: item.snippet.thumbnails.medium.url,
   videoUrl: `https://www.youtube.com/embed/${item.id.videoId}`,
-}));
+}
+));
 }

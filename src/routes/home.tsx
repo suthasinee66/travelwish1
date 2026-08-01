@@ -13,6 +13,27 @@ import {
   MoreHorizontal,
   MapPin,
   LayoutGrid,
+  Mountain,
+  Waves,
+  Camera,
+  TreePalm,
+  Coffee,
+  Building2,
+  Users,
+  Wallet,
+  Sparkle,
+  X,
+  PartyPopper,
+  Moon,
+  Crown,
+  Footprints,
+  Utensils,
+  ShoppingBag,
+  Armchair,
+  User,
+  UserRoundPlus,
+  Coins,
+  Gem,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
@@ -22,11 +43,15 @@ import { chatWithAI } from "@/lib/ai/chat";
 import { Link } from "@tanstack/react-router";
 import { getPlaceImage } from "@/lib/google/places";
 import { loadPlaceImages } from "@/lib/recommend/loadPlaceImages";
+import Sidebar from "@/components/Sidebar";
+import { useTravelStore } from "@/store/travelStore";
+import { loadTravelData } from "@/lib/travel/loadTravelData";
+import { getUserLocation } from "@/lib/location/getUserLocation";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
     meta: [
-      { title: "Mindtrip — Plan your perfect trip" },
+      { title: "TravelWise — Plan your perfect trip" },
       { name: "description", content: "AI-powered travel planning. Ask anything travel related." },
     ],
   }),
@@ -35,13 +60,14 @@ export const Route = createFileRoute("/home")({
 
 const navItems = [
   { icon: MessageCircle, label: "Chats", badge: 1 },
-  { icon: Briefcase, label: "Trips" },
+  { icon: Briefcase, label: "Trips", to: "/trips", },
   { icon: Compass, label: "Explore" },
   { icon: Heart, label: "Saved" },
   { icon: Bell, label: "Updates" },
   { icon: Lightbulb, label: "Inspiration" },
   { icon: Plus, label: "Create" },
 ];
+
 
 const forYou = [
   { title: "Temple of the Emerald Buddha (Wat Phra Kaew)", tag: "🏛 Attraction", img: "https://images.unsplash.com/photo-1563492065599-3520f775eeed?w=800&q=80" },
@@ -57,9 +83,21 @@ const inspired = [
 
 
 function Home() {
-  const [user, setUser] = useState<any>(null);
-  const [preferences, setPreferences] = useState<any>(null);
-  const [recommend, setRecommend] = useState<any[]>([]);
+  const {
+ user,
+ preferences,
+ recommend,
+ allPlaces,
+ explorePlaces,
+ allRecommend,
+ setUser,
+ setPreferences,
+ setRecommend,
+ setAllPlaces,
+ setExplorePlaces,
+ setAllRecommend
+} = useTravelStore();
+  
   const [inspire, setInspire] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
@@ -67,7 +105,6 @@ function Home() {
   const [hasChatStarted, setHasChatStarted] = useState(false);
   const [tripPlaces, setTripPlaces] = useState<any[]>([]);
   const [exploreOpen, setExploreOpen] = useState(false);
-  const [explorePlaces, setExplorePlaces] = useState<any[]>([]);
   const [exploreLoading, setExploreLoading] = useState(false);
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
   const [imageIndex, setImageIndex] = useState<Record<string, number>>({});
@@ -79,74 +116,112 @@ function Home() {
   const [selectedAtmosphere, setSelectedAtmosphere] = useState<string[]>([]);
   const [selectedBudget, setSelectedBudget] = useState<string[]>([]);
   const [selectedCompanion, setSelectedCompanion] = useState<string[]>([]);
-  const [allRecommend, setAllRecommend] = useState<any[]>([]);
   const skeletonCards = Array.from({ length: 6 });
   const [visibleCount, setVisibleCount] = useState(20);
+  const [isFiltering, setIsFiltering] = useState(false);
+  const [recommendOrder, setRecommendOrder] = useState<Record<string, number>>({});
+  const [savedIds, setSavedIds] = useState<number[]>([]);
 
-  const filteredPlaces = explorePlaces.filter((place) => {
+  
+  const hasFilter =
+    searchText ||
+    selectedRegion ||
+    selectedTravelType.length > 0 ||
+    selectedActivity.length > 0 ||
+    selectedAtmosphere.length > 0 ||
+    selectedBudget.length > 0 ||
+    selectedCompanion.length > 0;
 
+  const filteredPlaces = (
+    hasFilter
+      ? allPlaces
+      : explorePlaces
+  )
+    .filter((place) => {
 
-    const matchSearch =
-      place.name_th
-        ?.toLowerCase()
-        .includes(searchText.toLowerCase());
-
-
-
-    const matchTravelType =
-      selectedTravelType.length
-        ? selectedTravelType.some(
-          (v) => place.travel_type?.includes(v)
-        )
-        : true;
-
-
-
-    const matchActivity =
-      selectedActivity.length
-        ? selectedActivity.some(
-          (v) => place.activities?.includes(v)
-        )
-        : true;
-
+      const matchSearch =
+        place.name_th
+          ?.toLowerCase()
+          .includes(searchText.toLowerCase());
 
 
-    const matchAtmosphere =
-      selectedAtmosphere.length
-        ? selectedAtmosphere.some(
-          (v) => place.atmosphere?.includes(v)
-        )
-        : true;
+      const matchRegion =
+        selectedRegion
+          ? place.region === selectedRegion
+          : true;
 
 
 
-    const matchBudget =
-      selectedBudget.length
-        ? selectedBudget.includes(place.budget)
-        : true;
+      // ในกลุ่มเดียวกัน OR
+      const matchTravelType =
+        selectedTravelType.length > 0
+          ? selectedTravelType.some(
+            v => place.travel_type?.includes(v)
+          )
+          : true;
 
 
 
-    const matchCompanion =
-      selectedCompanion.length
-        ? selectedCompanion.some(
-          (v) => place.travel_companion?.includes(v)
-        )
-        : true;
+      const matchActivity =
+        selectedActivity.length > 0
+          ? selectedActivity.some(
+            v => place.activities?.includes(v)
+          )
+          : true;
 
 
 
-    return (
-      matchSearch &&
-      matchTravelType &&
-      matchActivity &&
-      matchAtmosphere &&
-      matchBudget &&
-      matchCompanion
-    );
+      const matchAtmosphere =
+        selectedAtmosphere.length > 0
+          ? selectedAtmosphere.some(
+            v => place.atmosphere?.includes(v)
+          )
+          : true;
 
 
-  });
+      const matchBudget =
+        selectedBudget.length > 0
+          ? selectedBudget.some(
+            v => place.budget?.includes(v)
+          )
+          : true;
+
+
+      const matchCompanion =
+        selectedCompanion.length > 0
+          ? selectedCompanion.some(
+            v => place.travel_companion?.includes(v)
+          )
+          : true;
+
+
+
+      // ข้ามกลุ่มเป็น AND
+      return (
+        matchSearch &&
+        matchRegion &&
+        matchTravelType &&
+        matchActivity &&
+        matchAtmosphere &&
+        matchBudget &&
+        matchCompanion
+      );
+
+
+    })
+    .sort((a, b) => {
+
+      const aRank =
+        recommendOrder[a.att_id] ?? 99999;
+
+      const bRank =
+        recommendOrder[b.att_id] ?? 99999;
+
+
+      return aRank - bRank;
+
+    });
+
 
   const toggleFilter = (
     value: string,
@@ -154,19 +229,17 @@ function Home() {
     current: string[]
   ) => {
 
+    setVisibleCount(20);
+
     if (current.includes(value)) {
-
       setter(
-        current.filter((v) => v !== value)
+        current.filter(v => v !== value)
       );
-
     } else {
-
       setter([
         ...current,
         value
       ]);
-
     }
 
   };
@@ -203,6 +276,45 @@ function Home() {
       </button>
     );
   };
+
+  const FilterButton = ({
+    label,
+    icon: Icon,
+    active,
+    onClick,
+  }: any) => {
+
+    return (
+      <button
+        onClick={onClick}
+        className={`
+flex
+items-center
+gap-2
+px-3
+py-2
+rounded-xl
+text-sm
+border
+transition-all
+duration-200
+${active
+            ?
+            "bg-black text-white border-black shadow-md scale-[1.02]"
+            :
+            "bg-white hover:bg-gray-100 border-gray-200"
+          }
+`}
+      >
+
+        {Icon && <Icon size={15} />}
+
+        <span>{label}</span>
+
+      </button>
+    )
+
+  }
   const loadExplorePlaces = () => {
 
     setExploreLoading(true);
@@ -266,11 +378,20 @@ function Home() {
 
   };
   const handleExplore = () => {
-    setVisibleCount(20);
-    setExplorePlaces(allRecommend);
-    setExploreOpen(true);
-  };
 
+  setVisibleCount(20);
+
+
+  setExplorePlaces(
+    allRecommend
+  );
+
+
+  setExploreOpen(true);
+
+};
+
+  
   const handleSend = async () => {
     if (!input.trim()) return;
 
@@ -334,188 +455,247 @@ function Home() {
       ]);
     }
   };
-  useEffect(() => {
-    const loadUser = async () => {
 
-      const { data: userData } = await supabase.auth.getUser();
+  const handleSave = async(place:any)=>{
 
-      if (!userData.user) return;
-
-      setUser(userData.user);
-
-      const { data: pref } = await supabase
-        .from("user_preferences")
-        .select("*")
-        .eq("profile_id", userData.user.id)
-        .single();
-
-      setPreferences(pref);
-
-      // ⭐ NEW: get recommendation
-      // ⭐ Load recommendation immediately
-      setRecommendLoading(true);
-
-      getRecommendations(pref)
-        .then(async (rec) => {
+const {
+ data:userData
+}=await supabase.auth.getUser();
 
 
-          // เก็บทั้งหมดไว้สำหรับ Explore
-          setAllRecommend(rec);
-
-
-          // แสดงแค่ 6 อันแรกหน้าแรก
-          const firstSix = rec.slice(0, 6);
-
-          setRecommend(firstSix);
+if(!userData.user) return;
 
 
 
-          // โหลดรูป 6 อันแรก
-          firstSix.forEach(async (place) => {
-
-            const updatedPlace = await loadPlaceImages(place);
-
-
-            setRecommend(prev =>
-              prev.map(item =>
-                item.att_id === place.att_id
-                  ? updatedPlace
-                  : item
-              )
-            );
-
-
-            setAllRecommend(prev =>
-              prev.map(item =>
-                item.att_id === place.att_id
-                  ? updatedPlace
-                  : item
-              )
-            );
-
-
-          });
+const isSaved =
+savedIds.includes(place.att_id);
 
 
 
-          // 3. โหลดที่เหลือทีหลัง
-          setTimeout(() => {
-
-            const rest = rec.slice(6);
-
-            rest.forEach(async (place) => {
-
-              const updatedPlace = await loadPlaceImages(place);
+if(isSaved){
 
 
-              setAllRecommend(prev =>
-                prev.map(item =>
-                  item.att_id === place.att_id
-                    ? updatedPlace
-                    : item
-                )
-              );
-
-
-            });
-
-
-          }, 5000);
+ await supabase
+ .from("saved_places")
+ .delete()
+ .eq(
+   "profile_id",
+   userData.user.id
+ )
+ .eq(
+   "att_id",
+   place.att_id
+ );
 
 
 
-        })
-        .finally(() => {
+ setSavedIds(
+   savedIds.filter(
+    id=>id!==place.att_id
+   )
+ );
 
-          setRecommendLoading(false);
 
-        });
-      // ⭐ Load inspiration separately
-      getInspireVideos(pref)
-        .then((vids) => {
+ return;
 
-          console.log("videos loaded", vids);
+}
 
-          setInspire(vids);
 
-        })
-        .catch((err) => {
 
-          console.error("video error", err);
+const {
+error
+}=await supabase
+.from("saved_places")
+.insert({
 
-        });
-    };
+ profile_id:userData.user.id,
 
-    loadUser();
-  }, []);
-  useEffect(() => {
+ att_id:place.att_id,
 
-    if (allRecommend.length > 0) {
+ collection:"Want to go"
 
-      setExplorePlaces(allRecommend);
+});
 
-    }
 
-  }, [allRecommend]);
+
+if(!error){
+
+ setSavedIds([
+   ...savedIds,
+   place.att_id
+ ]);
+
+}
+
+
+};
+
+  useEffect(()=>{
+
+async function loadSaved(){
+
+const {
+data:userData
+}=await supabase.auth.getUser();
+
+
+if(!userData.user) return;
+
+
+const {
+data
+}=await supabase
+.from("saved_places")
+.select("att_id")
+.eq(
+"profile_id",
+userData.user.id
+);
+
+
+setSavedIds(
+ data?.map(x=>x.att_id) || []
+);
+
+
+}
+
+
+loadSaved();
+
+},[]);
+useEffect(()=>{
+
+
+async function init(){
+
+
+try {
+
+
+if(
+  allPlaces.length > 0 &&
+  recommend.length > 0 &&
+  explorePlaces.length > 0
+){
+
+  console.log("ใช้ข้อมูลจาก store");
+
+  setRecommendLoading(false);
+
+  return;
+
+}
+
+
+
+console.log("โหลดข้อมูลใหม่");
+
+
+const data = await loadTravelData();
+
+
+if(!data) return;
+
+
+
+setUser(data.user);
+
+setPreferences(data.preferences);
+
+setAllPlaces(data.allPlaces);
+
+// เก็บ location ตรงนี้
+try {
+
+const location = await getUserLocation();
+
+
+await supabase
+.from("user_locations")
+.upsert({
+
+ user_id:data.user.id,
+
+ latitude:location.latitude,
+
+ longitude:location.longitude,
+
+ updated_at:new Date()
+
+});
+
+
+console.log(
+ "saved location",
+ location
+);
+
+
+}
+catch(err){
+
+console.log(
+ "location permission denied",
+ err
+);
+
+}
+
+
+
+const recommendData =
+await getRecommendations(
+  data.preferences
+);
+
+
+
+setRecommend(
+  recommendData.slice(0,6)
+);
+
+
+setExplorePlaces(
+  recommendData
+);
+
+
+setAllRecommend(recommendData);
+
+
+
+setRecommendLoading(false);
+
+
+
+}
+
+catch(err){
+
+console.error(
+"LOAD HOME ERROR",
+err
+);
+
+}
+
+
+}
+
+
+
+init();
+
+
+},[]);
+
 
   return (
     <div className="flex h-screen bg-background text-foreground">
       {/* Sidebar */}
-      <aside className="w-60 shrink-0 border-r border-border flex flex-col bg-sidebar">
-        <div className="px-5 py-5 flex items-center gap-2">
-          <Sparkles className="h-6 w-6" />
-          <span className="text-lg font-semibold tracking-tight">TravelWise.</span>
-        </div>
+      <Sidebar user={user} />
 
-        <nav className="px-2 flex-1">
-          {navItems.map((n) => (
-            <button
-              key={n.label}
-              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm rounded-md hover:bg-accent text-sidebar-foreground"
-            >
-              <n.icon className="h-[18px] w-[18px]" />
-              <span className="flex-1 text-left">{n.label}</span>
-              {n.badge && (
-                <span className="text-xs text-muted-foreground">{n.badge}</span>
-              )}
-            </button>
-          ))}
-
-          <button className="mt-4 w-full text-sm font-medium bg-secondary hover:bg-accent rounded-full py-2.5">
-            New chat
-          </button>
-        </nav>
-
-        {/* PayPal promo */}
-        <div className="m-3 rounded-2xl overflow-hidden relative p-4 text-sm text-white"
-          style={{ background: "linear-gradient(135deg, oklch(0.75 0.15 320), oklch(0.7 0.18 260))" }}>
-          <button className="absolute top-2 right-2 text-white/80">×</button>
-          <div className="font-semibold">PayPal</div>
-          <div className="font-bold text-base mt-1">Fly Now. Pay Later.</div>
-          <div className="text-xs mt-1 opacity-90">Get 5K points when you spend $250.</div>
-          <a className="text-xs underline mt-1 inline-block" href="#">Save offer</a>
-        </div>
-
-        <div className="border-t border-border p-3 flex items-center gap-2">
-          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-pink-400 to-orange-400" />
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium truncate">
-              {user?.user_metadata?.full_name || user?.email || "Guest"}
-            </div>
-
-            <div className="text-xs text-muted-foreground truncate">
-              {user?.email}
-            </div>
-          </div>
-          <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-        </div>
-
-        <div className="px-4 pb-4 text-[11px] text-muted-foreground space-x-2">
-          <span>Company</span>·<span>Contact</span>·<span>Help</span><br />
-          <span>Terms</span>·<span>Privacy</span>
-          <div className="mt-1">© 2026 Mindtrip, Inc.</div>
-        </div>
-      </aside>
 
       {/* Center */}
       <main
@@ -619,7 +799,7 @@ function Home() {
             </div>
           </div>
           <p className="text-center text-xs text-muted-foreground mt-3">
-            ⓘ Mindtrip can make mistakes. Check important info.
+            ⓘ TravelWise can make mistakes. Check important info.
           </p>
         </div>
       </main>
@@ -680,115 +860,193 @@ function Home() {
           {exploreOpen && (
             <div
               className="
-              w-64
-              shrink-0
-              border-r
-              pr-5
-              space-y-5
-              "
+w-72
+shrink-0
+border-r
+pr-6
+space-y-6
+overflow-y-auto
+h-full
+"
             >
 
-              <h2 className="font-semibold text-lg">
-                Filter
-              </h2>
+              <div className="flex items-center justify-between">
+
+                <h2 className="text-xl font-semibold">
+                  Filter
+                </h2>
 
 
-              <input
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                placeholder="Search place..."
-                className="
-                w-full
-                border
-                rounded-xl
-                px-3
-                py-2
-                text-sm
-                "
-              />
+                <button
+                  onClick={() => {
 
+                    setSearchText("");
+                    setSelectedRegion("");
+                    setSelectedTravelType([]);
+                    setSelectedActivity([]);
+                    setSelectedAtmosphere([]);
+                    setSelectedBudget([]);
+                    setSelectedCompanion([]);
 
-
-              <div>
-
-                <label className="text-sm">
-                  Region
-                </label>
-
-                <select
-                  value={selectedRegion}
-                  onChange={(e) => setSelectedRegion(e.target.value)}
-                  className="w-full border rounded-lg p-2 mt-1"
+                  }}
+                  className="
+text-xs
+text-muted-foreground
+hover:text-black
+"
                 >
-
-                  <option value="">
-                    All
-                  </option>
-
-                  <option value="ภาคเหนือ">
-                    ภาคเหนือ
-                  </option>
-
-                  <option value="ภาคกลาง">
-                    ภาคกลาง
-                  </option>
-
-                  <option value="ภาคใต้">
-                    ภาคใต้
-                  </option>
-
-
-                </select>
+                  Clear all
+                </button>
 
               </div>
 
 
+              <div className="
+relative
+">
 
+                <input
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  placeholder="Search destination..."
+                  className="
+w-full
+rounded-2xl
+border
+bg-gray-50
+px-4
+py-3
+text-sm
+outline-none
+focus:ring-2
+focus:ring-black/20
+"
+                />
+
+
+              </div>
               <div>
 
                 <label className="text-sm font-medium">
-                  Travel Type
+                  Region
                 </label>
 
 
-                <div className="space-y-2 mt-2">
+                <div className="grid grid-cols-2 gap-2 mt-3">
 
                   {
                     [
-                      "ภูเขา",
-                      "ทะเล",
-                      "วัฒนธรรม",
-                      "คาเฟ่",
-                      "ธรรมชาติ",
-                      "เมือง"
-                    ].map((item) => (
+                      "ภาคเหนือ",
+                      "ภาคกลาง",
+                      "ภาคตะวันออกเฉียงเหนือ",
+                      "ภาคตะวันออก",
+                      "ภาคใต้"
+                    ].map(region => (
 
-                      <label
-                        key={item}
-                        className="flex items-center gap-2 text-sm"
-                      >
+                      <FilterButton
 
-                        <input
-                          type="checkbox"
-                          checked={selectedTravelType.includes(item)}
-                          onChange={() =>
-                            toggleFilter(
-                              item,
-                              setSelectedTravelType,
-                              selectedTravelType
-                            )
-                          }
-                        />
+                        key={region}
 
-                        {item}
+                        label={region}
 
-                      </label>
+                        active={
+                          selectedRegion === region
+                        }
+
+                        onClick={() => {
+
+                          setSelectedRegion(
+                            selectedRegion === region
+                              ?
+                              ""
+                              :
+                              region
+                          )
+
+                        }}
+
+                      />
 
                     ))
 
                   }
 
                 </div>
+
+              </div>
+
+              <div>
+
+                <label className="text-sm font-medium">
+                  Travel style
+                </label>
+
+
+                <div className="flex flex-wrap gap-2 mt-3">
+
+
+                  <FilterButton
+                    label="ภูเขา"
+                    icon={Mountain}
+                    active={selectedTravelType.includes("ภูเขา")}
+                    onClick={() => toggleFilter(
+                      "ภูเขา",
+                      setSelectedTravelType,
+                      selectedTravelType
+                    )}
+                  />
+
+
+                  <FilterButton
+                    label="ทะเล"
+                    icon={Waves}
+                    active={selectedTravelType.includes("ทะเล")}
+                    onClick={() => toggleFilter(
+                      "ทะเล",
+                      setSelectedTravelType,
+                      selectedTravelType
+                    )}
+                  />
+
+
+                  <FilterButton
+                    label="ธรรมชาติ"
+                    icon={TreePalm}
+                    active={selectedTravelType.includes("ธรรมชาติ")}
+                    onClick={() => toggleFilter(
+                      "ธรรมชาติ",
+                      setSelectedTravelType,
+                      selectedTravelType
+                    )}
+                  />
+
+
+                  <FilterButton
+                    label="คาเฟ่"
+                    icon={Coffee}
+                    active={selectedTravelType.includes("คาเฟ่")}
+                    onClick={() => toggleFilter(
+                      "คาเฟ่",
+                      setSelectedTravelType,
+                      selectedTravelType
+                    )}
+                  />
+
+
+                  <FilterButton
+                    label="เมือง"
+                    icon={Building2}
+                    active={selectedTravelType.includes("เมือง")}
+                    onClick={() => toggleFilter(
+                      "เมือง",
+                      setSelectedTravelType,
+                      selectedTravelType
+                    )}
+                  />
+
+
+                </div>
+
 
               </div>
               <div>
@@ -798,132 +1056,98 @@ function Home() {
                 </label>
 
 
-                <div className="space-y-2 mt-2">
-
-                  {
-                    [
-                      "ถ่ายรูป",
-                      "เดินป่า",
-                      "อาหาร",
-                      "ช้อปปิ้ง",
-                      "พักผ่อน"
-                    ].map((item) => (
-
-                      <label
-                        key={item}
-                        className="flex items-center gap-2 text-sm"
-                      >
-
-                        <input
-                          type="checkbox"
-                          checked={selectedActivity.includes(item)}
-                          onChange={() =>
-                            toggleFilter(
-                              item,
-                              setSelectedActivity,
-                              selectedActivity
-                            )
-                          }
-                        />
-
-                        {item}
-
-                      </label>
-
-                    ))
-
-                  }
-
-                </div>
-
-              </div>
+                <div className="flex flex-wrap gap-2 mt-3">
 
 
-              <div>
+                  <FilterButton
 
-                <label className="text-sm">
-                  Atmosphere
-                </label>
+                    label="ถ่ายรูป"
+                    icon={Camera}
+                    active={
+                      selectedActivity.includes("ถ่ายรูป")
+                    }
+                    onClick={() =>
+                      toggleFilter(
+                        "ถ่ายรูป",
+                        setSelectedActivity,
+                        selectedActivity
+                      )
+                    }
+
+                  />
 
 
-                <div className="space-y-2 mt-2">
+                  <FilterButton
 
-                  {
-                    [
-                      "คึกคัก",
-                      "เงียบสงบ",
-                      "ผจญภัย",
-                      "หรูหรา"
-                    ].map((item) => (
+                    label="เดินป่า"
+                    icon={Footprints}
+                    active={
+                      selectedActivity.includes("เดินป่า")
+                    }
+                    onClick={() =>
+                      toggleFilter(
+                        "เดินป่า",
+                        setSelectedActivity,
+                        selectedActivity
+                      )
+                    }
 
-                      <label
-                        key={item}
-                        className="flex items-center gap-2 text-sm"
-                      >
+                  />
 
-                        <input
-                          type="checkbox"
-                          checked={selectedAtmosphere.includes(item)}
-                          onChange={() =>
-                            toggleFilter(
-                              item,
-                              setSelectedAtmosphere,
-                              selectedAtmosphere
-                            )
-                          }
-                        />
 
-                        {item}
+                  <FilterButton
 
-                      </label>
+                    label="อาหาร"
+                    icon={Utensils}
+                    active={
+                      selectedActivity.includes("อาหาร")
+                    }
+                    onClick={() =>
+                      toggleFilter(
+                        "อาหาร",
+                        setSelectedActivity,
+                        selectedActivity
+                      )
+                    }
 
-                    ))
+                  />
 
-                  }
 
-                </div>
+                  <FilterButton
 
-              </div>
+                    label="ช้อปปิ้ง"
+                    icon={ShoppingBag}
+                    active={
+                      selectedActivity.includes("ช้อปปิ้ง")
+                    }
+                    onClick={() =>
+                      toggleFilter(
+                        "ช้อปปิ้ง",
+                        setSelectedActivity,
+                        selectedActivity
+                      )
+                    }
 
-              <div>
+                  />
 
-                <label className="text-sm">
-                  Budget
-                </label>
 
-                <div className="space-y-2 mt-2">
+                  <FilterButton
 
-                  {
-                    [
-                      "ประหยัด",
-                      "ปานกลาง",
-                      "หรูหรา"
-                    ].map((item) => (
+                    label="พักผ่อน"
+                    icon={Armchair}
+                    active={
+                      selectedActivity.includes("พักผ่อน")
+                    }
+                    onClick={() =>
+                      toggleFilter(
+                        "พักผ่อน",
+                        setSelectedActivity,
+                        selectedActivity
+                      )
+                    }
 
-                      <label
-                        key={item}
-                        className="flex items-center gap-2 text-sm"
-                      >
+                  />
 
-                        <input
-                          type="checkbox"
-                          checked={selectedBudget.includes(item)}
-                          onChange={() =>
-                            toggleFilter(
-                              item,
-                              setSelectedBudget,
-                              selectedBudget
-                            )
-                          }
-                        />
-
-                        {item}
-
-                      </label>
-
-                    ))
-
-                  }
 
                 </div>
 
@@ -932,49 +1156,240 @@ function Home() {
               <div>
 
                 <label className="text-sm font-medium">
-                  Companion
+                  Atmosphere
                 </label>
 
 
-                <div className="space-y-2 mt-2">
+                <div className="flex flex-wrap gap-2 mt-3">
 
-                  {
-                    [
-                      "คนเดียว",
-                      "คู่รัก",
-                      "ครอบครัว",
-                      "เพื่อน"
-                    ].map((item) => (
 
-                      <label
-                        key={item}
-                        className="flex items-center gap-2 text-sm"
-                      >
+                  <FilterButton
 
-                        <input
-                          type="checkbox"
-                          checked={selectedCompanion.includes(item)}
-                          onChange={() =>
-                            toggleFilter(
-                              item,
-                              setSelectedCompanion,
-                              selectedCompanion
-                            )
-                          }
-                        />
+                    label="คึกคัก"
+                    icon={PartyPopper}
+                    active={
+                      selectedAtmosphere.includes("คึกคัก")
+                    }
+                    onClick={() =>
+                      toggleFilter(
+                        "คึกคัก",
+                        setSelectedAtmosphere,
+                        selectedAtmosphere
+                      )
+                    }
 
-                        {item}
+                  />
 
-                      </label>
 
-                    ))
+                  <FilterButton
 
-                  }
+                    label="เงียบสงบ"
+                    icon={Moon}
+                    active={
+                      selectedAtmosphere.includes("เงียบสงบ")
+                    }
+                    onClick={() =>
+                      toggleFilter(
+                        "เงียบสงบ",
+                        setSelectedAtmosphere,
+                        selectedAtmosphere
+                      )
+                    }
+
+                  />
+
+
+                  <FilterButton
+
+                    label="ผจญภัย"
+                    icon={Mountain}
+                    active={
+                      selectedAtmosphere.includes("ผจญภัย")
+                    }
+                    onClick={() =>
+                      toggleFilter(
+                        "ผจญภัย",
+                        setSelectedAtmosphere,
+                        selectedAtmosphere
+                      )
+                    }
+
+                  />
+
+
+                  <FilterButton
+
+                    label="หรูหรา"
+                    icon={Crown}
+                    active={
+                      selectedAtmosphere.includes("หรูหรา")
+                    }
+                    onClick={() =>
+                      toggleFilter(
+                        "หรูหรา",
+                        setSelectedAtmosphere,
+                        selectedAtmosphere
+                      )
+                    }
+
+                  />
+
 
                 </div>
 
               </div>
+              <div>
 
+                <label className="text-sm font-medium">
+                  Budget
+                </label>
+
+
+                <div className="flex flex-wrap gap-2 mt-3">
+
+
+                  <FilterButton
+
+                    label="ประหยัด"
+                    icon={Coins}
+                    active={
+                      selectedBudget.includes("ประหยัด")
+                    }
+                    onClick={() =>
+                      toggleFilter(
+                        "ประหยัด",
+                        setSelectedBudget,
+                        selectedBudget
+                      )
+                    }
+
+                  />
+
+
+                  <FilterButton
+
+                    label="ปานกลาง"
+                    icon={Wallet}
+                    active={
+                      selectedBudget.includes("ปานกลาง")
+                    }
+                    onClick={() =>
+                      toggleFilter(
+                        "ปานกลาง",
+                        setSelectedBudget,
+                        selectedBudget
+                      )
+                    }
+
+                  />
+
+
+                  <FilterButton
+
+                    label="หรูหรา"
+                    icon={Gem}
+                    active={
+                      selectedBudget.includes("หรูหรา")
+                    }
+                    onClick={() =>
+                      toggleFilter(
+                        "หรูหรา",
+                        setSelectedBudget,
+                        selectedBudget
+                      )
+                    }
+
+                  />
+
+
+                </div>
+
+              </div>
+              <div>
+
+                <label className="text-sm font-medium">
+                  Companion
+                </label>
+
+
+                <div className="flex flex-wrap gap-2 mt-3">
+
+
+                  <FilterButton
+
+                    label="คนเดียว"
+                    icon={User}
+                    active={
+                      selectedCompanion.includes("คนเดียว")
+                    }
+                    onClick={() =>
+                      toggleFilter(
+                        "คนเดียว",
+                        setSelectedCompanion,
+                        selectedCompanion
+                      )
+                    }
+
+                  />
+
+
+                  <FilterButton
+
+                    label="คู่รัก"
+                    icon={Heart}
+                    active={
+                      selectedCompanion.includes("คู่รัก")
+                    }
+                    onClick={() =>
+                      toggleFilter(
+                        "คู่รัก",
+                        setSelectedCompanion,
+                        selectedCompanion
+                      )
+                    }
+
+                  />
+
+
+                  <FilterButton
+
+                    label="ครอบครัว"
+                    icon={Users}
+                    active={
+                      selectedCompanion.includes("ครอบครัว")
+                    }
+                    onClick={() =>
+                      toggleFilter(
+                        "ครอบครัว",
+                        setSelectedCompanion,
+                        selectedCompanion
+                      )
+                    }
+
+                  />
+
+
+                  <FilterButton
+
+                    label="เพื่อน"
+                    icon={UserRoundPlus}
+                    active={
+                      selectedCompanion.includes("เพื่อน")
+                    }
+                    onClick={() =>
+                      toggleFilter(
+                        "เพื่อน",
+                        setSelectedCompanion,
+                        selectedCompanion
+                      )
+                    }
+
+                  />
+
+
+                </div>
+
+              </div>
             </div>
 
           )}
@@ -990,7 +1405,11 @@ function Home() {
                 {!exploreOpen && (
                   <button
                     onClick={handleExplore}
-                    className="text-sm text-muted-foreground hover:underline"
+                    className="
+text-xs
+text-muted-foreground
+hover:text-black
+"
                   >
                     Explore
                   </button>
@@ -1084,7 +1503,86 @@ function Home() {
   w-full
   object-cover
   "
-                          />{c.images?.length > 1 && (
+                          />
+                          
+{/* Save Heart */}
+<button
+  onClick={(e)=>{
+    e.stopPropagation();
+    handleSave(c);
+    console.log("save", c.att_id);
+  }}
+  className={
+    `
+absolute
+z-30
+top-2
+left-2
+rounded-full
+bg-black/40
+backdrop-blur-md
+flex
+items-center
+justify-center
+hover:bg-black/60
+transition
+${exploreOpen
+  ? "w-9 h-9"
+  : "w-7 h-7"
+}
+${
+      savedIds.includes(c.att_id)
+      ? "bg-white/90"
+      : "bg-black/40"
+    }
+
+`}
+>
+  <Heart
+ size={18}
+ className={
+   savedIds.includes(c.att_id)
+   ? "text-rose-500 fill-rose-500"
+   : "text-white"
+ }
+/>
+</button>
+
+
+
+{/* Add Trip */}
+<button
+  onClick={(e)=>{
+    e.stopPropagation();
+    console.log("add trip", c.att_id);
+  }}
+  className={`
+absolute
+z-30
+top-2
+right-2
+rounded-full
+bg-black/40
+backdrop-blur-md
+flex
+items-center
+justify-center
+hover:bg-black/60
+transition
+${exploreOpen
+  ? "w-9 h-9"
+  : "w-7 h-7"
+}
+`}
+>
+  <Plus
+    size={exploreOpen ? 20 : 15}
+  strokeWidth={2.5}
+    className="text-white"
+  />
+</button>
+
+                          {c.images?.length > 1 && (
                             <>
                               {/* Previous */}
                               <button
@@ -1184,16 +1682,34 @@ text-white
                                 ))}
 
                               </div>
-                              
+
                             )}
                             <div className="
 text-sm
 font-semibold
 line-clamp-2
 ">
+  {c.name_th}
+</div>
 
-                              {c.name_th}
-                            </div>
+
+<div className="
+mt-1
+flex
+items-center
+gap-1
+text-xs
+text-white/80
+">
+
+  <MapPin
+    size={12}
+    strokeWidth={2}
+  />
+
+  {c.province}
+
+</div>
                           </div>
                         </>
                       )
@@ -1205,13 +1721,13 @@ line-clamp-2
 
                 ))}
               </div>
-              {visibleCount < filteredPlaces.length && (
-  <div className="w-full flex justify-center mt-10 mb-10">
-    <button
-      onClick={() =>
-        setVisibleCount((prev) => prev + 20)
-      }
-      className="
+              {exploreOpen && visibleCount < filteredPlaces.length && (
+                <div className="w-full flex justify-center mt-10 mb-10">
+                  <button
+                    onClick={() =>
+                      setVisibleCount((prev) => prev + 20)
+                    }
+                    className="
         px-8
         py-3
         rounded-xl
@@ -1220,11 +1736,11 @@ line-clamp-2
         hover:bg-gray-100
         shadow-sm
       "
-    >
-      Load More
-    </button>
-  </div>
-)}
+                  >
+                    Load More
+                  </button>
+                </div>
+              )}
 
 
             </section>
