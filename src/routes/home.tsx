@@ -4,6 +4,7 @@ import {
   MessageCircle,
   Briefcase,
   Compass,
+  Landmark,
   Heart,
   Bell,
   Lightbulb,
@@ -39,7 +40,6 @@ import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 import { getRecommendations } from "@/lib/recommend/getRecommendations";
 import { getRecommendations as getInspireVideos } from "@/lib/inspire/getRecommendations";
-import { chatWithAI } from "@/lib/ai/chat";
 import { Link } from "@tanstack/react-router";
 import { getPlaceImage } from "@/lib/google/places";
 import { loadPlaceImages } from "@/lib/recommend/loadPlaceImages";
@@ -47,6 +47,18 @@ import Sidebar from "@/components/Sidebar";
 import { useTravelStore } from "@/store/travelStore";
 import { loadTravelData } from "@/lib/travel/loadTravelData";
 import { getUserLocation } from "@/lib/location/getUserLocation";
+import { createPlanner } from "@/lib/ai/planner";
+import { chatWithAI, resetTrip } from "@/lib/ai/chat";
+import { Bot, Copy, ThumbsUp, ThumbsDown } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import {
+  APIProvider,
+  Map,
+  AdvancedMarker,
+} from "@vis.gl/react-google-maps";
+
+
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -82,22 +94,860 @@ const inspired = [
 ];
 
 
+function WherePicker({
+  tripInput,
+  setTripInput,
+  filteredProvinces,
+  setActiveStep,
+  showProvinceDropdown,
+  setShowProvinceDropdown,
+}: {
+  tripInput: any;
+  setTripInput: any;
+  filteredProvinces: string[];
+  setActiveStep: any;
+  showProvinceDropdown: boolean;
+  setShowProvinceDropdown: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
+  console.log(tripInput.province);
+  console.log(filteredProvinces);
+  console.log(showProvinceDropdown);
+  return (
+
+    <div>
+
+      <div className="relative">
+
+        <input
+          value={tripInput.province}
+          onFocus={() => setShowProvinceDropdown(true)}
+          onChange={(e) => {
+            setTripInput({
+              ...tripInput,
+              province: e.target.value,
+            });
+
+          }}
+          placeholder="Location"
+          className="w-full border rounded-full px-5 py-4 outline-none"
+        />
+        {showProvinceDropdown &&
+          tripInput.province &&
+
+          filteredProvinces.length > 0 && (
+
+            <div className="absolute left-0 right-0 mt-2 bg-white border rounded-2xl shadow-lg max-h-60 overflow-y-auto z-50">
+
+              {filteredProvinces.map((province) => (
+                <button
+                  type="button"
+                  key={province}
+                  onClick={() => {
+                    setTripInput({
+                      ...tripInput,
+                      province,
+                    });
+
+                    setShowProvinceDropdown(false);
+                  }}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-100"
+                >
+                  {province}
+                </button>
+              ))}
+
+            </div>
+          )}
+
+      </div>
+
+
+
+      <div
+        className="
+flex
+justify-end
+items-center
+gap-3
+mt-5
+"
+      >
+
+
+
+
+
+
+      </div>
+
+
+
+      <button
+
+        disabled={!tripInput.province}
+
+        onClick={() => {
+
+          setActiveStep("days")
+
+        }}
+
+        className={`
+mt-10
+ml-auto
+block
+px-10
+py-3
+rounded-full
+font-semibold
+
+${tripInput.province
+
+            ?
+            "bg-black text-white"
+
+            :
+            "bg-gray-300 text-white"
+
+          }
+
+`}
+      >
+
+        Save
+
+      </button>
+
+
+    </div>
+
+  )
+
+}
+function DaysPicker({
+  tripInput,
+  setTripInput,
+  setActiveStep,
+}: any) {
+  return (
+    <div>
+      <h2 className="font-semibold mb-4">
+        How many days?
+      </h2>
+
+      <input
+        type="number"
+        min={1}
+        placeholder="Number of days"
+        value={tripInput.days ?? ""}
+        onChange={(e) =>
+          setTripInput({
+            ...tripInput,
+            days: Number(e.target.value),
+          })
+        }
+        className="w-full border rounded-xl px-4 py-3 outline-none"
+      />
+
+      <button
+        disabled={!tripInput.days}
+        onClick={() => setActiveStep("who")}
+        className={`mt-8 ml-auto block px-8 py-3 rounded-full font-semibold ${tripInput.days
+          ? "bg-black text-white"
+          : "bg-gray-300 text-white"
+          }`}
+      >
+        Next
+      </button>
+    </div>
+  );
+}
+function WhoPicker({
+  tripInput,
+  setTripInput,
+  setActiveStep,
+}: {
+  tripInput: any;
+  setTripInput: any;
+  setActiveStep: any;
+}) {
+  return (
+    <div>
+      <h2 className="font-semibold mb-4">
+        Who are you traveling with?
+      </h2>
+
+      <div className="grid grid-cols-2 gap-3">
+        {[
+          "คนเดียว",
+          "คู่รัก",
+          "เพื่อน",
+          "ครอบครัว",
+        ].map((x) => (
+          <button
+            key={x}
+            type="button"
+            onClick={() => {
+              setTripInput({
+                ...tripInput,
+                companion: x,
+              });
+
+              setActiveStep("budget");
+            }}
+            className={`
+              border
+              rounded-xl
+              px-5
+              py-3
+              transition
+              ${tripInput.companion === x
+                ? "bg-black text-white border-black"
+                : "hover:bg-gray-100"
+              }
+            `}
+          >
+            {x}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+function BudgetPicker({
+  tripInput,
+  setTripInput,
+  setTripModal,
+}: {
+  tripInput: any;
+  setTripInput: any;
+  setTripModal: any;
+}) {
+
+  return (
+    <div>
+
+      <h2 className="font-semibold mb-4">
+        What is your budget?
+      </h2>
+
+
+      <input
+        type="number"
+        placeholder="Enter your budget (บาท)"
+        value={tripInput.budget ?? ""}
+        onChange={(e) =>
+          setTripInput(prev => ({
+            ...prev,
+            budget: Number(e.target.value)
+          }))
+        }
+        className="w-full border rounded-xl px-4 py-3"
+      />
+
+
+      <button
+
+        disabled={!tripInput.budget}
+
+        onClick={() => {
+
+          setTripModal(false);
+
+        }}
+
+        className={`
+mt-8
+ml-auto
+block
+px-8
+py-3
+rounded-full
+font-semibold
+${tripInput.budget
+            ?
+            "bg-black text-white"
+            :
+            "bg-gray-300 text-white"
+          }
+`}
+
+      >
+        Save
+
+      </button>
+
+
+    </div>
+  )
+
+}
+function TripPlanPanel({
+  plannerJson,
+  plan,
+  tripInput,
+  allPlaces,
+  restaurants,
+  mapCenter,
+}: {
+  plannerJson:any;
+  plan:string;
+  tripInput:any;
+  allPlaces:any[];
+  restaurants:any[];
+  mapCenter:{
+    lat:number;
+    lng:number;
+  };
+}) {
+  console.log("🔥 TripPlanPanel RENDER");
+
+  const [selectedDay, setSelectedDay] = useState(0);
+  const getCoordinates = (places: any[]) => {
+
+    const place = places.find(
+      p => p.latitude && p.longitude
+    );
+
+
+    if (place) {
+
+      return {
+        lat: Number(place.latitude),
+        lng: Number(place.longitude)
+      };
+
+    }
+
+
+    return {
+      lat: 13.7563,
+      lng: 100.5018
+    };
+
+  };
+
+  const plannerItems = Array.isArray(plannerJson)
+  ? plannerJson
+  : plannerJson?.selectedPlaces || [];
+  console.log("RAW PLANNER JSON", plannerJson);
+  console.log("🔥 PLANNER ITEMS", plannerItems);
+
+console.log(
+  "🍜 RESTAURANT ITEMS",
+  plannerItems.filter(x => x.restaurant_id)
+);
+
+console.log(
+  "PLANNER ITEMS DETAIL",
+  plannerItems.map(x => ({
+    day:x.day,
+    place_id:x.place_id,
+    place_name:x.place_name,
+    restaurant_id:x.restaurant_id
+  }))
+);
+
+const markdownDays =
+  plan
+    ?.match(/(?:#{1,3}\s*)?(?:✨\s*)?Day\s*\d+.*?(?=\n(?:#{1,3}\s*)?(?:✨\s*)?Day\s*\d+|$)/gis)
+    ?.map((section:string,index:number)=>{
+
+      const lines = section
+        .split("\n")
+        .map(x=>x.trim())
+        .filter(Boolean);
+
+
+      return {
+        day:index+1,
+        title:
+          lines[0]
+          .replace(/[#✨]/g,"")
+          .replace(/Day\s*\d+[:：-]?/i,"")
+          .trim()
+      };
+
+    }) || [];
+
+
+const days = Array.from(
+  new Set(plannerItems.map(x => x.day))
+).map(day => {
+
+  const items = plannerItems
+    .filter(x => x.day === day)
+    .map(item => ({
+      ...item,
+      type: item.restaurant_id
+        ? "restaurant"
+        : "place"
+    }));
+
+
+  return {
+    day,
+    title: markdownDays[day - 1]?.title || "",
+    items
+  };
+
+});
+
+  const findPlace = (placeId: string) => {
+
+  const result = allPlaces.find(
+    p => String(p.att_id) === String(placeId)
+  );
+
+
+  console.log(
+    "FIND PLACE",
+    placeId,
+    result
+  );
+
+
+  return result;
+};
+const findRestaurant = (restaurantId: string) => {
+
+  const result = restaurants.find(
+    r =>
+      String(r.place_id) === String(restaurantId)
+  );
+
+
+  console.log(
+    "🍜 FIND RESTAURANT",
+    restaurantId,
+    result
+  );
+
+
+  return result;
+};
+
+  console.log(
+    "DAY CONTENT",
+    days[selectedDay]?.content
+  );
+
+  console.log(
+  "SELECTED DAY ITEMS",
+  days[selectedDay]?.items
+);
+
+console.log(
+  "ALL DAYS",
+  days
+);
+const mapPlaces =
+  days[selectedDay]?.items
+    .map((item, index) => {
+
+      let location;
+      let name;
+
+
+      // 🍜 restaurant
+      if (item.restaurant_id) {
+
+        location = findRestaurant(
+          item.restaurant_id
+        );
+
+        name = location?.place_name_th;
+
+
+      } 
+      // 🏔 attraction
+      else {
+
+        location = findPlace(
+          item.place_id
+        );
+
+        name = location?.name_th;
+
+      }
+
+
+      return {
+        ...item,
+        number: index + 1,
+        location,
+        name
+      };
+
+    })
+    .filter(
+      x =>
+        x.location?.latitude &&
+        x.location?.longitude
+    ) || [];
+
+
+
+console.log(
+  "FINAL MAP PLACES",
+  mapPlaces
+);
+
+
+
+console.log(
+  "FINAL MARKERS",
+  mapPlaces.map(x => ({
+    number: x.number,
+    name: x.name,
+    id: x.restaurant_id ?? x.place_id,
+    lat: Number(x.location.latitude),
+    lng: Number(x.location.longitude)
+  }))
+);
+  const markerCenter =
+mapPlaces.length
+?
+{
+ lat:Number(mapPlaces[0].location.latitude),
+ lng:Number(mapPlaces[0].location.longitude)
+}
+:
+mapCenter;
+
+  return (
+    <div className="flex flex-col gap-3 w-full">
+
+      {/* MAP */}
+      <div
+        className="
+  h-[260px]
+  rounded-2xl
+  overflow-hidden
+  "
+      >
+
+        <APIProvider
+          apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
+        >
+
+          <Map
+            defaultZoom={13}
+            center={markerCenter}
+            mapId="travelwise-map"
+          >
+
+            {
+  mapPlaces.map((place) => (
+    <AdvancedMarker
+ key={place.restaurant_id ?? place.place_id}
+ position={{
+   lat:Number(place.location.latitude),
+   lng:Number(place.location.longitude)
+ }}
+>
+      <div
+        className="
+        w-8
+        h-8
+        rounded-full
+        bg-black
+        text-white
+        flex
+        items-center
+        justify-center
+        font-bold
+        shadow-lg
+        border-2
+        border-white
+        "
+      >
+        {place.number}
+      </div>
+
+    </AdvancedMarker>
+  ))
+}
+
+
+          </Map>
+
+        </APIProvider>
+
+
+      </div>
+
+
+
+      {/* HEADER */}
+      <div>
+
+
+        <h1 className="text-xl font-bold">
+          Trip to {tripInput.province}
+        </h1>
+
+
+        <p className="text-xs text-gray-500">
+          {tripInput.days} days itinerary
+        </p>
+
+
+
+        {/* TABS */}
+        <div
+          className="
+          flex
+          gap-5
+          border-b
+          mt-3
+          "
+        >
+
+          {days.map((_, index) => (
+
+            <button
+              key={index}
+              onClick={() => setSelectedDay(index)}
+              className={`
+              text-xs
+              pb-2
+              ${selectedDay === index
+                  ? "font-bold border-b-2 border-black"
+                  : "text-gray-400"
+                }
+              `}
+            >
+              Day {index + 1}
+
+            </button>
+
+          ))}
+
+
+        </div>
+
+
+
+
+        {/* PLACE LIST */}
+        <div className="mt-3 space-y-3 ml-6">
+
+<h2 className="text-sm font-bold">
+  Day {days[selectedDay]?.day}
+  {" "}
+  {days[selectedDay]?.title}
+</h2>
+{
+days[selectedDay]?.items?.map((item,index)=>(
+
+<div
+key={index}
+className="
+flex
+items-center
+gap-3
+border
+rounded-2xl
+p-3
+bg-white
+shadow-sm
+"
+>
+
+{/* Number Circle */}
+
+<div
+className="
+w-8
+h-8
+rounded-full
+bg-black
+text-white
+flex
+items-center
+justify-center
+font-bold
+text-sm
+shrink-0
+"
+>
+{index + 1}
+</div>
+
+
+{/* Image */}
+
+<div
+className="
+w-16
+h-16
+rounded-xl
+overflow-hidden
+bg-gray-200
+shrink-0
+"
+>
+<img
+src={
+  item.type === "restaurant"
+    ? findRestaurant(item.restaurant_id)?.images?.[0]
+    : findPlace(item.place_id)?.images?.[0]
+}
+className="
+w-full
+h-full
+object-cover
+"
+/>
+
+</div>
+
+
+{/* Content */}
+
+<div className="flex-1">
+
+<div className="
+font-semibold
+text-sm
+line-clamp-2
+">
+
+{
+ item.type === "restaurant"
+ ? item.restaurant_name
+ : item.place_name
+}
+
+</div>
+
+
+<div className="
+text-xs
+text-gray-400
+mt-1
+">
+
+{item.period}
+
+</div>
+
+
+{
+item.type === "restaurant" && (
+
+<div
+className="
+text-xs
+text-orange-600
+mt-1
+"
+>
+🍽 Restaurant
+</div>
+
+)
+
+}
+
+
+</div>
+
+
+</div>
+
+))
+}
+
+
+</div>
+
+
+      </div>
+
+
+    </div>
+  );
+}
+async function loadAllRestaurants() {
+
+  const pageSize = 1000;
+  let allRestaurants: any[] = [];
+
+  let from = 0;
+
+  while (true) {
+
+    const {
+      data,
+      error
+    } = await supabase
+      .from("restaurant")
+      .select("*")
+      .range(
+        from,
+        from + pageSize - 1
+      );
+
+
+    if (error) {
+      console.error(error);
+      break;
+    }
+
+
+    console.log(
+      "restaurant page:",
+      from,
+      data.length
+    );
+
+
+    if (data.length === 0) {
+      break;
+    }
+
+
+    allRestaurants.push(...data);
+
+
+    if (data.length < pageSize) {
+      break;
+    }
+
+
+    from += pageSize;
+
+  }
+
+
+  console.log(
+    "TOTAL RESTAURANTS",
+    allRestaurants.length
+  );
+
+
+  return allRestaurants;
+
+}
+
 function Home() {
   const {
- user,
- preferences,
- recommend,
- allPlaces,
- explorePlaces,
- allRecommend,
- setUser,
- setPreferences,
- setRecommend,
- setAllPlaces,
- setExplorePlaces,
- setAllRecommend
-} = useTravelStore();
-  
+    user,
+    preferences,
+    recommend,
+    allPlaces,
+    explorePlaces,
+    allRecommend,
+    setUser,
+    setPreferences,
+    setRecommend,
+    setAllPlaces,
+    setExplorePlaces,
+    setAllRecommend
+  } = useTravelStore();
+
   const [inspire, setInspire] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
@@ -121,8 +971,46 @@ function Home() {
   const [isFiltering, setIsFiltering] = useState(false);
   const [recommendOrder, setRecommendOrder] = useState<Record<string, number>>({});
   const [savedIds, setSavedIds] = useState<number[]>([]);
+  const [showProvinceDropdown, setShowProvinceDropdown] = useState(false);
+  const [tripModal, setTripModal] = useState(false);
+  const [waitingPlanConfirm, setWaitingPlanConfirm] = useState(false);
+  const [plannerJson, setPlannerJson] = useState<any[]>([]);
+  const [activeStep, setActiveStep] =
+    useState<
+      "where" |
+      "days" |
+      "who" |
+      "preference" |
+      "budget"
+    >("where");
+type TripInput = {
+  province: string;
+  days: number | null;
+  companion: string;
+  budget: number | null;
+  travelType: string[];
+  activities: string[];
+  atmosphere: string[];
+};
+const [tripInput, setTripInput] = useState<TripInput>({
+  province: "",
+  days: null,
+  companion: "",
+  budget: null,
 
-  
+  travelType: [],
+  activities: [],
+  atmosphere: []
+});
+  const [mapCenter, setMapCenter] = useState({
+    lat: 13.7563,
+    lng: 100.5018
+  });
+  const [restaurants, setRestaurants] = useState([]);
+  const [chatSessions, setChatSessions] = useState<any[]>([]);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [searchProvince, setSearchProvince] = useState("");
+  const [showTripPlan, setShowTripPlan] = useState(false);
   const hasFilter =
     searchText ||
     selectedRegion ||
@@ -131,6 +1019,173 @@ function Home() {
     selectedAtmosphere.length > 0 ||
     selectedBudget.length > 0 ||
     selectedCompanion.length > 0;
+
+    const loadUserTripPreference = async () => {
+
+  if (!user?.id) return;
+
+
+  const {
+    data,
+    error
+  } = await supabase
+    .from("user_preferences")
+    .select(`
+      travel_type,
+      activities,
+      atmosphere
+    `)
+    .eq(
+      "profile_id",
+      user.id
+    )
+    .single();
+
+
+  if (error) {
+
+    console.error(
+      "Load user preference error:",
+      error
+    );
+
+    return;
+
+  }
+
+
+  setTripInput(prev => ({
+    ...prev,
+
+    travelType:
+      data.travel_type || [],
+
+    activities:
+      data.activities || [],
+
+    atmosphere:
+      data.atmosphere
+        ? [data.atmosphere]
+        : []
+
+  }));
+
+
+};
+useEffect(() => {
+
+  loadUserTripPreference();
+
+}, [user]);
+  const loadChatMessages = async (chatId: string) => {
+
+    console.log("LOAD CHAT:", chatId);
+
+    const { data, error } = await supabase
+      .from("chat_messages")
+      .select("*")
+      .eq(
+        "session_id",
+        chatId
+      )
+      .order(
+        "created_at",
+        {
+          ascending: true
+        }
+      );
+
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+    console.log(data);
+console.log(data?.[0]);
+console.log(data?.[0]?.planner_json);
+
+
+    setCurrentChatId(chatId);
+    const { data: session } = await supabase
+  .from("chat_sessions")
+  .select("trip_preferences")
+  .eq("id", chatId)
+  .single();
+
+if (session?.trip_preferences) {
+  setTripInput(session.trip_preferences);
+}
+
+const formatted = data.map((m) => ({
+  role: m.role,
+  text: m.content
+}));
+
+setMessages(formatted);
+
+
+// โหลด planner_json
+const planner = data
+  .filter(m => m.role === "ai")
+  .find(m => m.planner_json);
+
+
+if (planner?.planner_json) {
+
+  const json =
+    typeof planner.planner_json === "string"
+        ? JSON.parse(planner.planner_json)
+        : planner.planner_json;
+
+console.log(json);
+console.log(Array.isArray(json));
+
+setPlannerJson(json);
+
+  setShowTripPlan(true);
+
+}
+else {
+
+  setPlannerJson([]);
+  setShowTripPlan(false);
+
+}
+
+
+    // =====================
+    // หา planner เก่า
+    // =====================
+
+    const oldPlan = data
+      .filter(
+        m => m.role === "ai"
+      )
+      .find(
+        m =>
+          m.content.includes("# ✨ Day")
+      );
+
+
+    if (oldPlan) {
+
+      setPlan(oldPlan.content);
+
+      setShowTripPlan(true);
+
+    }
+    else {
+
+      setPlan(null);
+
+      setShowTripPlan(false);
+
+    }
+
+
+    setHasChatStarted(true);
+
+  };
 
   const filteredPlaces = (
     hasFilter
@@ -315,6 +1370,24 @@ ${active
     )
 
   }
+
+  const provinces = [
+    ...new Set(
+      allPlaces
+        .map((p) => p.province)
+        .filter(Boolean)
+    ),
+  ].sort();
+
+
+  const filteredProvinces = provinces.filter((province) =>
+    province
+      .toLowerCase()
+      .includes(tripInput.province.toLowerCase())
+  );
+
+
+
   const loadExplorePlaces = () => {
 
     setExploreLoading(true);
@@ -379,322 +1452,712 @@ ${active
   };
   const handleExplore = () => {
 
-  setVisibleCount(20);
+    setVisibleCount(20);
 
 
-  setExplorePlaces(
-    allRecommend
-  );
+    setExplorePlaces(
+      allRecommend
+    );
 
 
-  setExploreOpen(true);
+    setExploreOpen(true);
 
-};
+  };
+  const checkTripInput = () => {
 
-  
+    if (!tripInput.province) {
+      setActiveStep("where");
+      setTripModal(true);
+      return false;
+    }
+
+
+    if (!tripInput.days) {
+      setActiveStep("days");
+      setTripModal(true);
+      return false;
+    }
+
+
+    if (!tripInput.companion) {
+      setActiveStep("who");
+      setTripModal(true);
+      return false;
+    }
+
+
+    if (!tripInput.budget) {
+      setActiveStep("budget");
+      setTripModal(true);
+      return false;
+    }
+
+
+    return true;
+
+  };
   const handleSend = async () => {
+
     if (!input.trim()) return;
+    let chatId = currentChatId;
+
+
+    if (!chatId) {
+
+      const { data, error } = await supabase
+        .from("chat_sessions")
+        .insert({
+
+          user_id: user.id,
+
+          title: input.slice(0, 30),
+
+          trip_preferences: tripInput
+
+        })
+        .select()
+        .single();
+
+
+      if (data) {
+
+        chatId = data.id;
+
+        setCurrentChatId(data.id);
+
+      }
+
+    }
 
     setHasChatStarted(true);
 
-    const userInput = input;
-    const { data: attraction, error } = await supabase
-      .from("attraction")
-      .select("*");
 
-    if (error) {
-      console.error(error);
+
+    // ถ้ากำลังรอ confirm
+    if (waitingPlanConfirm) {
+
+      const userMessage = {
+        role: "user",
+        text: input
+      };
+
+
+      setMessages(prev => [
+        ...prev,
+        userMessage
+      ]);
+      const { data: userMsg, error: userMsgError } = await supabase
+        .from("chat_messages")
+        .insert({
+          session_id: chatId,
+          user_id: user.id,
+          role: "user",
+          content: input
+        })
+        .select()
+        .single();
+
+
+      if (userMsgError) {
+
+        console.error(
+          "❌ บันทึก user message ไม่สำเร็จ:",
+          userMsgError
+        );
+
+      }
+
+
+      if (userMsg) {
+
+        console.log(
+          "✅ บันทึก user message แล้ว:",
+          userMsg
+        );
+
+      }
+
+
+      if (userMsgError) {
+
+        console.error(
+          "❌ บันทึก user message ไม่สำเร็จ:",
+          userMsgError
+        );
+
+      }
+
+      setInput("");
+
+      if (
+        input.includes("ใช่") ||
+        input.includes("ครับ") ||
+        input.includes("จัดเลย") ||
+        input.includes("ตกลง")
+      ) {
+
+        setWaitingPlanConfirm(false);
+
+        setMessages(prev => [
+          ...prev,
+          {
+            role: "ai",
+            text: "⏳ กำลังสร้างแผนเที่ยว..."
+          }
+        ]);
+        const result = await createPlanner(
+  tripInput,
+  chatId!,
+  user.id
+);
+
+
+setPlan(result.markdown);
+
+setPlannerJson(result.planner_json);
+
+        setShowTripPlan(true);
+
+        setExploreOpen(false);
+
+        setMessages(prev => [
+          ...prev.slice(0, -1),
+          {
+            role: "ai",
+            text: result
+          }
+        ]);
+
+        return;
+      }
     }
 
-    setMessages((prev) => [
+
+    // เช็คข้อมูลก่อน
+    if (!checkTripInput()) {
+
+
+      setMessages(prev => [
+        ...prev,
+        {
+          role: "ai",
+          text: "ขอข้อมูลทริปเพิ่มก่อนนะครับ 😊"
+        }
+      ]);
+
+
+      return;
+
+    }
+
+
+
+    // มีข้อมูลครบแล้ว
+    setMessages(prev => [
       ...prev,
       {
         role: "user",
-        text: userInput,
-      },
+        text: input
+      }
     ]);
+
+
 
     setInput("");
 
-    try {
-      const result = await chatWithAI(
-        userInput,
-        messages,
-        preferences,
-        attraction
+
+    const aiText =
+      "ข้อมูลครบแล้วครับ ✨ ต้องการให้จัดแพลนเลยไหม?";
+
+
+    setMessages(prev => [
+      ...prev,
+      {
+        role: "ai",
+        text: aiText
+      }
+    ]);
+
+    const { data: aiMsg, error: aiError } = await supabase
+      .from("chat_messages")
+      .insert({
+        session_id: chatId,
+        user_id: user.id,
+
+        role: "ai",
+
+        content: aiText
+
+      })
+      .select()
+      .single();
+
+
+
+    if (aiMsg) {
+
+      console.log(
+        "✅ บันทึก AI message แล้ว:",
+        aiMsg
       );
 
-      console.log(result);
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: result.reply,   // ✅ เอาเฉพาะ reply
-        },
-      ]);
-
-      setPlan(result.tripInfo);
-      if (result.completed) {
-        const selected = (attraction ?? []).filter((a) =>
-          result.recommendations.includes(a.att_id)
-        );
-
-        setTripPlaces(selected);
-      }
-
-    } catch (err) {
-      console.error(err);
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: "AI ตอบกลับผิดพลาด",
-        },
-      ]);
     }
+
+
+    if (aiError) {
+
+      console.error(
+        "❌ บันทึก AI message ไม่สำเร็จ:",
+        aiError
+      );
+
+    }
+
+
+
+    setWaitingPlanConfirm(true);
+
+
   };
 
-  const handleSave = async(place:any)=>{
 
-const {
- data:userData
-}=await supabase.auth.getUser();
+  const handleSave = async (place: any) => {
 
+    const {
+      data: userData
+    } = await supabase.auth.getUser();
 
-if(!userData.user) return;
 
+    if (!userData.user) return;
 
 
-const isSaved =
-savedIds.includes(place.att_id);
 
+    const isSaved =
+      savedIds.includes(place.att_id);
 
 
-if(isSaved){
 
+    if (isSaved) {
 
- await supabase
- .from("saved_places")
- .delete()
- .eq(
-   "profile_id",
-   userData.user.id
- )
- .eq(
-   "att_id",
-   place.att_id
- );
 
+      await supabase
+        .from("saved_places")
+        .delete()
+        .eq(
+          "profile_id",
+          userData.user.id
+        )
+        .eq(
+          "att_id",
+          place.att_id
+        );
 
 
- setSavedIds(
-   savedIds.filter(
-    id=>id!==place.att_id
-   )
- );
 
+      setSavedIds(
+        savedIds.filter(
+          id => id !== place.att_id
+        )
+      );
 
- return;
 
-}
+      return;
 
+    }
 
 
-const {
-error
-}=await supabase
-.from("saved_places")
-.insert({
 
- profile_id:userData.user.id,
+    const {
+      error
+    } = await supabase
+      .from("saved_places")
+      .insert({
 
- att_id:place.att_id,
+        profile_id: userData.user.id,
 
- collection:"Want to go"
+        att_id: place.att_id,
 
-});
+        collection: "Want to go"
 
+      });
 
 
-if(!error){
 
- setSavedIds([
-   ...savedIds,
-   place.att_id
- ]);
+    if (!error) {
 
-}
+      setSavedIds([
+        ...savedIds,
+        place.att_id
+      ]);
 
+    }
 
-};
 
-  useEffect(()=>{
+  };
 
-async function loadSaved(){
+  useEffect(() => {
 
-const {
-data:userData
-}=await supabase.auth.getUser();
+    async function loadChats() {
 
+      if (!user) return;
 
-if(!userData.user) return;
 
+      const { data, error } = await supabase
+        .from("chat_sessions")
+        .select("*")
+        .eq(
+          "user_id",
+          user.id
+        )
+        .order(
+          "created_at",
+          {
+            ascending: false
+          }
+        );
 
-const {
-data
-}=await supabase
-.from("saved_places")
-.select("att_id")
-.eq(
-"profile_id",
-userData.user.id
-);
 
+      if (!error) {
 
-setSavedIds(
- data?.map(x=>x.att_id) || []
-);
+        setChatSessions(data || []);
 
+      }
 
-}
+    }
 
 
-loadSaved();
+    loadChats();
 
-},[]);
-useEffect(()=>{
 
+  }, [user]);
 
-async function init(){
+  useEffect(() => {
 
+    async function loadSaved() {
 
-try {
+      const {
+        data: userData
+      } = await supabase.auth.getUser();
 
 
-if(
-  allPlaces.length > 0 &&
-  recommend.length > 0 &&
-  explorePlaces.length > 0
-){
+      if (!userData.user) return;
 
-  console.log("ใช้ข้อมูลจาก store");
 
-  setRecommendLoading(false);
+      const {
+        data
+      } = await supabase
+        .from("saved_places")
+        .select("att_id")
+        .eq(
+          "profile_id",
+          userData.user.id
+        );
 
-  return;
 
-}
+      setSavedIds(
+        data?.map(x => x.att_id) || []
+      );
 
 
+    }
 
-console.log("โหลดข้อมูลใหม่");
 
+    loadSaved();
 
-const data = await loadTravelData();
+  }, []);
+  useEffect(() => {
 
 
-if(!data) return;
+    async function init() {
 
 
+      try {
 
-setUser(data.user);
 
-setPreferences(data.preferences);
+        if (
+          allPlaces.length > 0 &&
+          recommend.length > 0 &&
+          explorePlaces.length > 0
+        ) {
 
-setAllPlaces(data.allPlaces);
+          console.log("ใช้ข้อมูลจาก store");
 
-// เก็บ location ตรงนี้
-try {
+          setRecommendLoading(false);
 
-const location = await getUserLocation();
+          return;
 
+        }
 
-await supabase
-.from("user_locations")
-.upsert({
 
- user_id:data.user.id,
 
- latitude:location.latitude,
+        console.log("โหลดข้อมูลใหม่");
 
- longitude:location.longitude,
 
- updated_at:new Date()
+        const data = await loadTravelData();
 
-});
 
+        if (!data) return;
+
+
+
+        setUser(data.user);
+
+        setPreferences(data.preferences);
+        setAllPlaces(data.allPlaces);
+
+
+        // โหลดร้านอาหาร
+        const restaurantsData =
+  await loadAllRestaurants();
 
 console.log(
- "saved location",
- location
+  "🍜 RESTAURANT TOTAL",
+  restaurantsData.length
 );
-
-
-}
-catch(err){
 
 console.log(
- "location permission denied",
- err
+  "🍜 RESTAURANT SAMPLE",
+  restaurantsData.slice(0,10)
 );
 
-}
+setRestaurants(restaurantsData);
+        // เก็บ location ตรงนี้
+        try {
+
+          const location = await getUserLocation();
+
+
+          await supabase
+            .from("user_locations")
+            .upsert(
+              {
+                user_id: data.user.id,
+
+                latitude: location.latitude,
+
+                longitude: location.longitude,
+
+                updated_at: new Date()
+
+              },
+              {
+                onConflict: "user_id"
+              }
+            );
+
+
+          console.log(
+            "saved location",
+            location
+          );
+
+
+        }
+        catch (err) {
+
+          console.log(
+            "location permission denied",
+            err
+          );
+
+        }
 
 
 
-const recommendData =
-await getRecommendations(
-  data.preferences
-);
+        const recommendData =
+          await getRecommendations(
+            data.preferences
+          );
 
 
 
-setRecommend(
-  recommendData.slice(0,6)
-);
+        setRecommend(
+          recommendData.slice(0, 6)
+        );
 
 
-setExplorePlaces(
-  recommendData
-);
+        setExplorePlaces(
+          recommendData
+        );
 
 
-setAllRecommend(recommendData);
-
-
-
-setRecommendLoading(false);
+        setAllRecommend(recommendData);
 
 
 
-}
-
-catch(err){
-
-console.error(
-"LOAD HOME ERROR",
-err
-);
-
-}
-
-
-}
+        setRecommendLoading(false);
 
 
 
-init();
+      }
+
+      catch (err) {
+
+        console.error(
+          "LOAD HOME ERROR",
+          err
+        );
+
+      }
 
 
-},[]);
+    }
+
+
+
+    init();
+
+
+  }, []);
 
 
   return (
     <div className="flex h-screen bg-background text-foreground">
       {/* Sidebar */}
-      <Sidebar user={user} />
+      <Sidebar
+        user={user}
+        chatSessions={chatSessions}
+        onSelectChat={loadChatMessages}
+      />
+      {
+        tripModal && (
+
+          <div
+            className="
+fixed
+inset-0
+z-[100]
+bg-black/40
+backdrop-blur-md
+flex
+items-center
+justify-center
+"
+            onClick={() => setTripModal(false)}
+          >
+
+
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="
+w-[520px]
+min-h-[260px]
+bg-white
+rounded-3xl
+shadow-2xl
+p-6
+"
+            >
+
+
+
+
+
+              {/* Header */}
+
+              <div
+                className="
+relative
+flex
+items-center
+justify-center
+mb-8
+"
+              >
+
+                <button
+                  onClick={() => setTripModal(false)}
+                  className="
+absolute
+left-0
+text-2xl
+"
+                >
+                  ×
+                </button>
+
+
+                <h1 className="
+font-semibold
+text-xl
+">
+                  {activeStep === "where" && "Where"}
+
+                  {activeStep === "days" && "Days"}
+
+                  {activeStep === "who" && "Who"}
+
+                  {activeStep === "budget" && "Budget"}
+
+                </h1>
+
+
+              </div>
+
+
+              {
+                activeStep === "where" &&
+                <WherePicker
+                  tripInput={tripInput}
+                  setTripInput={setTripInput}
+                  filteredProvinces={filteredProvinces}
+                  setActiveStep={setActiveStep}
+                  showProvinceDropdown={showProvinceDropdown}
+                  setShowProvinceDropdown={setShowProvinceDropdown}
+                />
+
+              }
+
+
+              {
+                activeStep === "days" &&
+                <DaysPicker
+                  tripInput={tripInput}
+                  setTripInput={setTripInput}
+                  setActiveStep={setActiveStep}
+                />
+              }
+
+
+              {
+                activeStep === "who" &&
+                <WhoPicker
+                  tripInput={tripInput}
+                  setTripInput={setTripInput}
+                  setActiveStep={setActiveStep}
+                />
+              }
+
+
+              {
+                activeStep === "budget" &&
+                <BudgetPicker
+                  tripInput={tripInput}
+                  setTripInput={setTripInput}
+                  setTripModal={setTripModal}
+
+                />
+              }
+
+              {
+                activeStep === "preference" &&
+                <PreferencePicker
+                  tripInput={tripInput}
+                  setTripInput={setTripInput}
+                  setActiveStep={setActiveStep}
+                />
+              }
+
+
+            </div>
+
+          </div>
+
+
+
+
+        )
+      }
 
 
       {/* Center */}
@@ -706,7 +2169,7 @@ init();
     min-w-0
     transition-all
     duration-300
-    pr-[480px]
+    pr-[600px]
   `}
       >
         {exploreOpen && (
@@ -726,31 +2189,272 @@ init();
             New chat <span className="text-muted-foreground">▾</span>
           </button>
           <div className="flex-1 flex justify-center">
-            <div className="flex items-center gap-6 text-sm text-muted-foreground">
-              <button className="hover:text-foreground">Where</button>
-              <button className="hover:text-foreground">When</button>
-              <button className="hover:text-foreground">Who</button>
-              <button className="hover:text-foreground">Budget</button>
+            <div className="flex items-center gap-6 text-sm">
+              <button
+                onClick={() => {
+                  setActiveStep("where");
+                  setTripModal(true);
+                }}
+              >
+                Where
+                <br />
+
+                <span className="text-xs text-gray-400">
+                  {tripInput.province || "Add location"}
+                </span>
+
+              </button>
+
+
+
+              <button
+                onClick={() => {
+                  setActiveStep("days");
+                  setTripModal(true);
+                }}
+              >
+                Days
+                <br />
+
+                <span className="text-xs text-gray-400">
+                  {tripInput.days
+                    ? `${tripInput.days} วัน`
+                    : "Add dates"}
+                </span>
+
+              </button>
+
+
+
+              <button
+                onClick={() => {
+                  setActiveStep("who");
+                  setTripModal(true);
+                }}
+              >
+                Who
+                <br />
+
+                <span className="text-xs text-gray-400">
+                  {tripInput.companion || "Add people"}
+                </span>
+
+              </button>
+
+
+
+              <button
+                onClick={() => {
+                  setActiveStep("budget");
+                  setTripModal(true);
+                }}
+              >
+                Budget
+                <br />
+
+                <span className="text-xs text-gray-400">
+                  {tripInput.budget
+                    ? `${tripInput.budget.toLocaleString()} บาท`
+                    : "Add budget"}
+                </span>
+
+              </button>
+
+
             </div>
           </div>
           <button className="bg-foreground text-background rounded-full px-4 py-2 text-sm font-medium flex items-center gap-2">
             <Sparkles className="h-4 w-4" /> Create a trip
           </button>
         </header>
-        <div className="flex-1 px-6 overflow-y-auto">
 
-          <div className="flex flex-col gap-2 mt-4">
+        <div className="flex-1 px-6 overflow-y-auto">
+          <div className="
+max-w-3xl
+mx-auto
+w-full
+space-y-8
+mt-8
+">
+
             {messages.map((m, i) => (
+
               <div
                 key={i}
-                className={`text-sm p-2 rounded-lg max-w-md ${m.role === "user"
-                  ? "bg-blue-500 text-white ml-auto"
-                  : "bg-gray-200 text-black mr-auto"
-                  }`}
+                className={`
+flex
+gap-4
+${m.role === "user"
+                    ?
+                    "justify-end"
+                    :
+                    "justify-start"
+                  }
+`}
               >
-                {m.text}
+
+
+                {/* AI Avatar */}
+
+                {
+                  m.role === "ai" && (
+
+                    <div
+                      className="
+w-9
+h-9
+rounded-full
+bg-gradient-to-br
+from-blue-500
+to-purple-500
+flex
+items-center
+justify-center
+shrink-0
+"
+                    >
+
+                      <Bot
+                        size={20}
+                        className="text-white"
+                      />
+
+                    </div>
+
+                  )
+
+                }
+
+
+
+                <div
+                  className={`
+max-w-2xl
+text-[15px]
+leading-7
+
+${m.role === "user"
+
+                      ?
+
+                      "bg-gray-100 px-5 py-3 rounded-3xl"
+
+                      :
+
+                      ""
+
+                    }
+
+`}
+                >
+
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      h1: ({ children }) => (
+                        <h1 className="
+      text-2xl
+      font-bold
+      mt-8
+      mb-4
+      ">
+                          {children}
+                        </h1>
+                      ),
+
+                      h2: ({ children }) => (
+                        <h2 className="
+      text-xl
+      font-bold
+      mt-6
+      mb-3
+      ">
+                          {children}
+                        </h2>
+                      ),
+
+                      p: ({ children }) => (
+                        <p className="
+      leading-7
+      mb-3
+      ">
+                          {children}
+                        </p>
+                      ),
+
+                      li: ({ children }) => (
+                        <li className="ml-5 list-disc">
+                          {children}
+                        </li>
+                      )
+                    }}
+                  >
+                    {m.text}
+                  </ReactMarkdown>
+
+
+
+                  {
+                    m.role === "ai" && (
+
+                      <div
+                        className="
+flex
+gap-2
+mt-4
+"
+                      >
+
+
+                        <button
+                          className="
+p-2
+rounded-full
+hover:bg-gray-100
+"
+                        >
+                          <Copy size={16} />
+                        </button>
+
+
+                        <button
+                          className="
+p-2
+rounded-full
+hover:bg-gray-100
+"
+                        >
+                          <ThumbsUp size={16} />
+                        </button>
+
+
+                        <button
+                          className="
+p-2
+rounded-full
+hover:bg-gray-100
+"
+                        >
+                          <ThumbsDown size={16} />
+                        </button>
+
+
+                      </div>
+
+                    )
+
+                  }
+
+
+                </div>
+
+
               </div>
+
+
             ))}
+
+
           </div>
 
         </div>
@@ -776,7 +2480,10 @@ init();
           <div className="max-w-2xl mx-auto border border-border rounded-2xl shadow-sm bg-card">
             <input
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value);
+                setHasChatStarted(true);
+              }}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
               placeholder="Ask anything"
               className="w-full px-5 pt-4 pb-2 bg-transparent outline-none text-base"
@@ -803,18 +2510,7 @@ init();
           </p>
         </div>
       </main>
-      {exploreOpen && (
-        <div
-          className="
-      fixed
-      inset-0
-      bg-black/30
-      backdrop-blur-sm
-      z-40
-    "
-          onClick={() => setExploreOpen(false)}
-        />
-      )}
+
       {/* Right panel */}
       <aside
         className={`
@@ -829,7 +2525,7 @@ init();
     transition-all
     duration-500
     overflow-hidden
-    ${exploreOpen ? "w-[80vw]" : "w-[480px]"}
+    ${exploreOpen ? "w-[80vw]" : "w-[600px]"}
   `}
       >
         {exploreOpen && (
@@ -1015,6 +2711,17 @@ focus:ring-black/20
                     active={selectedTravelType.includes("ธรรมชาติ")}
                     onClick={() => toggleFilter(
                       "ธรรมชาติ",
+                      setSelectedTravelType,
+                      selectedTravelType
+                    )}
+                  />
+
+                  <FilterButton
+                    label="วัฒนธรรม"
+                    icon={Landmark}
+                    active={selectedTravelType.includes("วัฒนธรรม")}
+                    onClick={() => toggleFilter(
+                      "วัฒนธรรม",
                       setSelectedTravelType,
                       selectedTravelType
                     )}
@@ -1394,67 +3101,86 @@ focus:ring-black/20
 
           )}
           <div className="flex-1 flex flex-col">
-            <section className="flex flex-col">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <h2 className="font-semibold">Recommend for you </h2>
-                  <button className="ml-2 text-xs border border-border rounded-full px-2.5 py-1 flex items-center gap-1">
-                    <LayoutGrid className="h-3 w-3" /> Map
-                  </button>
+            {showTripPlan &&
+Array.isArray(plannerJson) &&
+plannerJson.length > 0 && (
+    <TripPlanPanel
+ plannerJson={plannerJson}
+ plan={plan}
+ tripInput={tripInput}
+ allPlaces={allPlaces}
+ restaurants={restaurants}
+ mapCenter={mapCenter}
+/>
+)}
+
+
+            {/* Recommend เดิม เอาออกจาก else */}
+            {!showTripPlan && (
+              <>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-semibold">
+                      Recommend for you
+                    </h2>
+
+                    <button className="ml-2 text-xs border rounded-full px-2.5 py-1 flex items-center gap-1">
+                      <LayoutGrid className="h-3 w-3" />
+                      Map
+                    </button>
+                  </div>
+
+                  {!exploreOpen && (
+                    <button
+                      onClick={handleExplore}
+                      className="text-xs text-muted-foreground hover:text-black"
+                    >
+                      Explore
+                    </button>
+                  )}
                 </div>
-                {!exploreOpen && (
-                  <button
-                    onClick={handleExplore}
-                    className="
-text-xs
-text-muted-foreground
-hover:text-black
-"
-                  >
-                    Explore
-                  </button>
-                )}
-              </div>
-              <div
-                className={`
-    grid
-    gap-3
-    ${exploreOpen
-                    ? "grid-cols-4 w-full"
-                    : "grid-cols-3 w-[430px]"
-                  }
-  `}
-              >
-                {(
-                  recommendLoading
-                    ? skeletonCards
-                    : (exploreOpen
-                      ? filteredPlaces.slice(0, visibleCount)
-                      : recommend.slice(0, 6))
-                ).map((c: any, index) => (
-                  <div
-                    key={c?.att_id ?? index}
-                    className="
+
+
+                <div
+                  className={`
+        grid
+        gap-3
+        ${exploreOpen
+                      ? "grid-cols-4 w-full"
+                      : "grid-cols-3 w-[430px]"
+                    }
+      `}
+                >
+                  {(
+                    recommendLoading
+                      ? skeletonCards
+                      : (exploreOpen
+                        ? filteredPlaces.slice(0, visibleCount)
+                        : recommend.slice(0, 6))
+                  ).map((c: any, index) => (
+                    <div
+                      key={c?.att_id ?? index}
+                      className="
                     relative
                     rounded-xl
                     overflow-hidden
                     aspect-[3/4]
                     bg-gray-100
                     "
-                  >
+                    >
 
 
-                    {
-                      recommendLoading ? (
+                      {
+                        recommendLoading ? (
 
-                        <div className="
+                          <div className="
                         absolute
                         inset-0
                         bg-gray-200
                         animate-pulse
                         ">
 
-                          <div className="
+                            <div className="
                         absolute
                         bottom-5
                         left-3
@@ -1462,58 +3188,58 @@ hover:text-black
                         space-y-2
                         ">
 
-                            <div className="
+                              <div className="
                         h-3
                         w-3/4
                         bg-gray-300
                         rounded
                         "/>
 
-                            <div className="
+                              <div className="
                         h-3
                         w-1/2
                         bg-gray-300
                         rounded
                         "/>
 
+                            </div>
+
                           </div>
 
-                        </div>
 
+                        ) : (
 
-                      ) : (
+                          <>
 
-                        <>
-
-                          <img
-                            src={
-                              c.images?.[imageIndex[c.att_id] || 0]
-                              || c.image
-                            }
-                            onError={() =>
-                              handleImageError(
-                                c.att_id,
-                                c.images?.length || 0
-                              )
-                            }
-                            className="
+                            <img
+                              src={
+                                c.images?.[imageIndex[c.att_id] || 0]
+                                || c.image
+                              }
+                              onError={() =>
+                                handleImageError(
+                                  c.att_id,
+                                  c.images?.length || 0
+                                )
+                              }
+                              className="
   absolute
   inset-0
   h-full
   w-full
   object-cover
   "
-                          />
-                          
-{/* Save Heart */}
-<button
-  onClick={(e)=>{
-    e.stopPropagation();
-    handleSave(c);
-    console.log("save", c.att_id);
-  }}
-  className={
-    `
+                            />
+
+                            {/* Save Heart */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSave(c);
+                                console.log("save", c.att_id);
+                              }}
+                              className={
+                                `
 absolute
 z-30
 top-2
@@ -1527,36 +3253,35 @@ justify-center
 hover:bg-black/60
 transition
 ${exploreOpen
-  ? "w-9 h-9"
-  : "w-7 h-7"
-}
-${
-      savedIds.includes(c.att_id)
-      ? "bg-white/90"
-      : "bg-black/40"
-    }
+                                  ? "w-9 h-9"
+                                  : "w-7 h-7"
+                                }
+${savedIds.includes(c.att_id)
+                                  ? "bg-white/90"
+                                  : "bg-black/40"
+                                }
 
 `}
->
-  <Heart
- size={18}
- className={
-   savedIds.includes(c.att_id)
-   ? "text-rose-500 fill-rose-500"
-   : "text-white"
- }
-/>
-</button>
+                            >
+                              <Heart
+                                size={18}
+                                className={
+                                  savedIds.includes(c.att_id)
+                                    ? "text-rose-500 fill-rose-500"
+                                    : "text-white"
+                                }
+                              />
+                            </button>
 
 
 
-{/* Add Trip */}
-<button
-  onClick={(e)=>{
-    e.stopPropagation();
-    console.log("add trip", c.att_id);
-  }}
-  className={`
+                            {/* Add Trip */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                console.log("add trip", c.att_id);
+                              }}
+                              className={`
 absolute
 z-30
 top-2
@@ -1570,32 +3295,32 @@ justify-center
 hover:bg-black/60
 transition
 ${exploreOpen
-  ? "w-9 h-9"
-  : "w-7 h-7"
-}
+                                  ? "w-9 h-9"
+                                  : "w-7 h-7"
+                                }
 `}
->
-  <Plus
-    size={exploreOpen ? 20 : 15}
-  strokeWidth={2.5}
-    className="text-white"
-  />
-</button>
+                            >
+                              <Plus
+                                size={exploreOpen ? 20 : 15}
+                                strokeWidth={2.5}
+                                className="text-white"
+                              />
+                            </button>
 
-                          {c.images?.length > 1 && (
-                            <>
-                              {/* Previous */}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
+                            {c.images?.length > 1 && (
+                              <>
+                                {/* Previous */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
 
-                                  changeImage(
-                                    c.att_id,
-                                    "prev",
-                                    c.images.length
-                                  );
-                                }}
-                                className="
+                                    changeImage(
+                                      c.att_id,
+                                      "prev",
+                                      c.images.length
+                                    );
+                                  }}
+                                  className="
   absolute
   z-20
   left-2
@@ -1611,23 +3336,23 @@ ${exploreOpen
   justify-center
   hover:bg-black/70
   "
-                              >
-                                ‹
-                              </button>
+                                >
+                                  ‹
+                                </button>
 
 
-                              {/* Next */}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
+                                {/* Next */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
 
-                                  changeImage(
-                                    c.att_id,
-                                    "next",
-                                    c.images.length
-                                  );
-                                }}
-                                className="
+                                    changeImage(
+                                      c.att_id,
+                                      "next",
+                                      c.images.length
+                                    );
+                                  }}
+                                  className="
       absolute
       z-20
       right-2
@@ -1643,12 +3368,12 @@ ${exploreOpen
       justify-center
       hover:bg-black/70
       "
-                              >
-                                ›
-                              </button>
-                            </>
-                          )}
-                          <div className="
+                                >
+                                  ›
+                                </button>
+                              </>
+                            )}
+                            <div className="
 absolute
 inset-0
 bg-gradient-to-t
@@ -1657,43 +3382,43 @@ via-black/20
 "/>
 
 
-                          <div className="
+                            <div className="
 absolute
 bottom-0
 p-3
 text-white
 ">
-                            {c.images?.length > 1 && (
-                              <div className="flex gap-1 mb-2">
+                              {c.images?.length > 1 && (
+                                <div className="flex gap-1 mb-2">
 
-                                {c.images.map((_: any, i: number) => (
-                                  <div
-                                    key={i}
-                                    className={`
+                                  {c.images.map((_: any, i: number) => (
+                                    <div
+                                      key={i}
+                                      className={`
         h-1.5
         rounded-full
         transition-all
         ${(imageIndex[c.att_id] || 0) === i
-                                        ? "w-5 bg-white"
-                                        : "w-1.5 bg-white/50"
-                                      }
+                                          ? "w-5 bg-white"
+                                          : "w-1.5 bg-white/50"
+                                        }
         `}
-                                  />
-                                ))}
+                                    />
+                                  ))}
 
-                              </div>
+                                </div>
 
-                            )}
-                            <div className="
+                              )}
+                              <div className="
 text-sm
 font-semibold
 line-clamp-2
 ">
-  {c.name_th}
-</div>
+                                {c.name_th}
+                              </div>
 
 
-<div className="
+                              <div className="
 mt-1
 flex
 items-center
@@ -1702,52 +3427,56 @@ text-xs
 text-white/80
 ">
 
-  <MapPin
-    size={12}
-    strokeWidth={2}
-  />
+                                <MapPin
+                                  size={12}
+                                  strokeWidth={2}
+                                />
 
-  {c.province}
+                                {c.province}
 
-</div>
-                          </div>
-                        </>
-                      )
+                              </div>
+                            </div>
+                          </>
+                        )
 
-                    }
+                      }
 
 
-                  </div>
+                    </div>
 
-                ))}
-              </div>
-              {exploreOpen && visibleCount < filteredPlaces.length && (
-                <div className="w-full flex justify-center mt-10 mb-10">
-                  <button
-                    onClick={() =>
-                      setVisibleCount((prev) => prev + 20)
-                    }
-                    className="
-        px-8
-        py-3
-        rounded-xl
-        border
-        bg-white
-        hover:bg-gray-100
-        shadow-sm
-      "
-                  >
-                    Load More
-                  </button>
+                  ))}
                 </div>
-              )}
 
 
-            </section>
+                {exploreOpen && visibleCount < filteredPlaces.length && (
+                  <div className="w-full flex justify-center mt-10 mb-10">
+                    <button
+                      onClick={() =>
+                        setVisibleCount((prev) => prev + 20)
+                      }
+                      className="
+                    px-8
+                    py-3
+                    rounded-xl
+                    border
+                    bg-white
+                    hover:bg-gray-100
+                    shadow-sm
+                  "
+                    >
+                      Load More
+                    </button>
+                  </div>
+                )}
 
-            {!exploreOpen && (
+              </>
+            )}
+
+            {!exploreOpen && !showTripPlan && (
               <section>
-                <h2 className="font-semibold mb-3">Get started</h2>
+                <h2 className="font-semibold mb-3">
+                  Get started
+                </h2>
 
                 <div className="grid grid-cols-2 gap-3 w-[430px]">
 
@@ -1811,7 +3540,7 @@ text-white/80
                 </div>
               </section>
             )}
-            {!exploreOpen && (
+            {!exploreOpen && !showTripPlan && (
               <section>
                 <h2 className="font-semibold mb-3">
                   Get inspired for you
@@ -1836,13 +3565,16 @@ text-white/80
                       </div>
                     </div>
                   ))}
+
                 </div>
+
               </section>
             )}
+
           </div>
         </div>
-      </aside>
+      </aside >
 
-    </div>
+    </div >
   );
 }

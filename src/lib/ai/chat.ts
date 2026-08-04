@@ -1,147 +1,485 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
+import { createPlanner } from "./planner";
 
-const ai = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_KEY);
 
-const model = ai.getGenerativeModel({
-  model: "gemini-2.5-flash",
+const ai = new GoogleGenAI({
+  apiKey: import.meta.env.VITE_GEMINI_API_KEY,
 });
 
+
+/* ==========================
+   Types
+========================== */
+
+export interface TripInfo {
+
+  province:string | null;
+
+  days:number | null;
+
+  budget:number | null;
+
+  companion:string | null;
+
+  travelType:string[];
+
+  activities:string[];
+
+  atmosphere:string | null;
+
+}
+
+
+export interface ChatResult {
+
+  reply:string;
+
+  completed:boolean;
+
+  tripInfo:TripInfo;
+
+}
+
+
+
+/* ==========================
+   Memory
+========================== */
+
+
+let currentTrip:TripInfo = {
+
+  province:null,
+
+  days:null,
+
+  budget:null,
+
+  companion:null,
+
+  travelType:[],
+
+  activities:[],
+
+  atmosphere:null
+
+};
+
+
+
+export function resetTrip(){
+
+ currentTrip={
+
+  province:null,
+
+  days:null,
+
+  budget:null,
+
+  companion:null,
+
+  travelType:[],
+
+  activities:[],
+
+  atmosphere:null
+
+ };
+
+}
+
+
+
+/* ==========================
+   Extract User Data
+========================== */
+
+function extractTripInfoFast(message:string){
+
+const text = message.toLowerCase();
+
+
+const data:any = {
+ province:null,
+ days:null,
+ budget:null,
+ companion:null,
+ travelType:[],
+ activities:[],
+ atmosphere:null
+};
+
+
+
+// จังหวัด
+
+const provinces=[
+"เชียงใหม่",
+"เชียงราย",
+"กรุงเทพมหานคร",
+"ภูเก็ต",
+"กระบี่",
+"พังงา",
+"ชลบุรี",
+"กาญจนบุรี"
+];
+
+
+for(const p of provinces){
+
+ if(text.includes(p)){
+   data.province=p;
+   break;
+ }
+
+}
+
+
+// วัน
+
+const day =
+text.match(/(\d+)\s*วัน/);
+
+
+if(day){
+ data.days=Number(day[1]);
+}
+
+
+// งบ
+
+const money =
+text.match(/(\d[\d,]*)\s*(บาท|฿)?/);
+
+
+if(money){
+
+ data.budget=
+ Number(
+  money[1].replace(",","")
+ );
+
+}
+
+
+// คนไปด้วย
+
+
+if(
+ text.includes("แฟน") ||
+ text.includes("คู่รัก")
+){
+
+ data.companion="คู่รัก";
+
+}
+
+
+else if(text.includes("เพื่อน")){
+
+ data.companion="เพื่อน";
+
+}
+
+
+else if(text.includes("ครอบครัว")){
+
+ data.companion="ครอบครัว";
+
+}
+
+
+else if(text.includes("คนเดียว")){
+
+ data.companion="คนเดียว";
+
+}
+
+
+
+// ประเภท
+
+const types=[
+"ทะเล",
+"ภูเขา",
+"ธรรมชาติ",
+"คาเฟ่",
+"วัฒนธรรม",
+"เมือง"
+];
+
+
+data.travelType =
+types.filter(t=>text.includes(t));
+
+
+
+
+// activity
+
+const acts=[
+"ถ่ายรูป",
+"เดินป่า",
+"อาหาร",
+"ช้อปปิ้ง",
+"พักผ่อน"
+];
+
+
+data.activities =
+acts.filter(a=>text.includes(a));
+
+
+
+return data;
+
+}
+
+
+
+/* ==========================
+   Update Memory
+========================== */
+async function updateTrip(message: string) {
+
+  // 1. ดึงข้อมูลด้วย Regex ก่อน
+  let data = extractTripInfoFast(message);
+
+  console.log("⚡ FAST:", data);
+
+  // 2. ถ้าข้อมูลยังไม่ครบ ใช้ Gemini ช่วย
+  if (needAI(data)) {
+
+    try {
+
+      const aiData = await extractTripInfo(message);
+
+      console.log("🤖 GEMINI:", aiData);
+
+      data = {
+
+        province: data.province ?? aiData.province,
+        days: data.days ?? aiData.days,
+        budget: data.budget ?? aiData.budget,
+        companion: data.companion ?? aiData.companion,
+        travelType:
+          data.travelType.length > 0
+            ? data.travelType
+            : aiData.travelType ?? [],
+        activities:
+          data.activities.length > 0
+            ? data.activities
+            : aiData.activities ?? [],
+        atmosphere:
+          data.atmosphere ?? aiData.atmosphere
+
+      };
+
+    } catch (err) {
+
+      console.log("Gemini parse failed", err);
+
+    }
+
+  }
+
+  if (data.province)
+    currentTrip.province = data.province;
+
+  if (data.days)
+    currentTrip.days = data.days;
+
+  if (data.budget)
+    currentTrip.budget = data.budget;
+
+  if (data.companion)
+    currentTrip.companion = data.companion;
+
+  if (data.travelType.length)
+    currentTrip.travelType = data.travelType;
+
+  if (data.activities.length)
+    currentTrip.activities = data.activities;
+
+  if (data.atmosphere)
+    currentTrip.atmosphere = data.atmosphere;
+
+  console.log("📦 CURRENT:", currentTrip);
+
+}
+
+/* ==========================
+   Check Complete
+========================== */
+
+function isComplete() {
+
+    return (
+        currentTrip.province &&
+        currentTrip.days &&
+        currentTrip.budget &&
+        currentTrip.companion &&
+        currentTrip.travelType.length > 0
+    );
+
+}
+
+
+
+/* ==========================
+   Question
+========================== */
+
+
+/* ==========================
+   Main Chat
+========================== */
 export async function chatWithAI(
-  message: string,
-  history: any[] = [],
-  profile: any = null,
-  attraction: any[] = []
-) {
-  const profileText = profile
-    ? `
-Personal Profile
-- ประเภทการท่องเที่ยว: ${profile.travel_type ?? "-"}
-- กิจกรรมที่ชอบ: ${profile.activity ?? "-"}
-- บรรยากาศที่ชอบ: ${profile.atmosphere ?? "-"}
-- เดินทางกับ: ${profile.travel_companion ?? "-"}
-- งบประมาณที่ชอบ: ${profile.budget ?? "-"}
-- ช่วงเวลาที่ชอบ: ${profile.travel_time ?? "-"}
-- ภูมิภาคที่ชอบ: ${profile.preferred_region ?? "-"}
-- เป้าหมายการเดินทาง: ${profile.travel_goal ?? "-"}
-`
-    : "";
+  message:string,
+  messages?:any[],
+  preferences?:any,
+  attraction?:any[],
+  tripInput?:any
+):Promise<ChatResult>{
 
-  const attractionText = (attraction ?? [])
-  .map(
-      (a) => `
-id:${a.att_id}
-ชื่อ:${a.name_th}
-จังหวัด:${a.province}
-ประเภท:${a.category}
-รายละเอียด:${a.detail_th}
-`
-    )
-    .join("\n");
+if (tripInput) {
 
-  const prompt = `
-คุณคือ TravelWise AI ผู้ช่วยวางแผนการเดินทาง
+    if (tripInput.province)
+        currentTrip.province = tripInput.province;
 
-====================
-Personal Profile
-====================
+    if (tripInput.days)
+        currentTrip.days = tripInput.days;
 
-${profileText}
+    if (tripInput.budget)
+        currentTrip.budget = tripInput.budget;
 
-หากผู้ใช้ไม่ได้ตอบข้อมูลบางข้อ
-ให้ใช้ข้อมูลจาก Personal Profile เป็นค่าเริ่มต้น
+    if (tripInput.companion)
+        currentTrip.companion = tripInput.companion;
 
-หากผู้ใช้ตอบเอง
-ให้ใช้ข้อมูลของผู้ใช้เสมอ
+    if (tripInput.travelType?.length)
+        currentTrip.travelType = tripInput.travelType;
 
-====================
-ข้อมูลสถานที่
-====================
+    if (tripInput.activities?.length)
+        currentTrip.activities = tripInput.activities;
 
-${attractionText}
+    if (tripInput.atmosphere)
+        currentTrip.atmosphere = tripInput.atmosphere;
+}
 
-====================
-Conversation History
-====================
 
-${(history ?? [])
-  .map((m) => `${m.role}: ${m.text}`)
-  .join("\n")}
+await updateTrip(message);
 
-====================
-หน้าที่
-====================
 
-รวบรวมข้อมูลต่อไปนี้
+if(!isComplete()){
 
-1. ไปเที่ยวที่ไหน
-2. ไปกี่วัน
-3. งบประมาณ
-4. ไปกับใคร
-5. ชอบเที่ยวแบบไหน
+
+return {
+
+ reply:
+ "ข้อมูลทริปยังไม่ครบครับ กรุณากรอกข้อมูลให้ครบก่อน",
+
+ completed:false,
+
+ tripInfo:currentTrip
+
+};
+
+
+}
+
+
+const plan =
+await createPlanner(
+ currentTrip as any
+);
+
+
+
+return {
+
+reply: plan,
+
+completed:true,
+
+
+tripInfo:currentTrip
+
+
+};
+
+
+
+}
+
+async function extractTripInfo(message:string){
+
+const response =
+await ai.models.generateContent({
+
+model:"gemini-2.5-flash",
+contents: `
+อ่านข้อความของผู้ใช้
+
+"${message}"
+
+แยกข้อมูลการท่องเที่ยว
 
 กฎ
 
-- ถามทีละข้อ
-- ห้ามถามซ้ำ
-- ถ้ารู้คำตอบแล้วไม่ต้องถามอีก
-- ถ้าข้อมูลยังไม่ครบ ให้ถามเฉพาะข้อมูลที่ขาด
+- "หมื่น" = 10000
+- "สองหมื่น" = 20000
+- "ห้าพัน" = 5000
+- "สุดสัปดาห์หน้า" = 2 วัน
+- "วันเดียว" = 1 วัน
+- "สองคืน" = 2 วัน
+- "สามคืน" = 3 วัน
+- "แฟน" = "คู่รัก"
+- "เมีย" = "คู่รัก"
+- "ภรรยา" = "คู่รัก"
+- "ลูก" = "ครอบครัว"
 
-เมื่อข้อมูลครบ
-
-1. สรุปข้อมูลทั้งหมด
-2. วิเคราะห์ Personal Profile
-3. เลือกสถานที่จากฐานข้อมูลที่เหมาะสมที่สุด
-4. เลือกจำนวน 6-10 สถานที่
-5. ห้ามสร้างสถานที่เอง
-6. recommendations ต้องเป็น att_id จากฐานข้อมูลเท่านั้น
-
-ตอบเป็น JSON เท่านั้น
+ตอบ JSON เท่านั้น
 
 {
-  "reply":"ข้อความตอบผู้ใช้",
+  "province": null,
+  "days": null,
+  "budget": null,
+  "companion": null,
+  "travelType": [],
+  "activities": [],
+  "atmosphere": null
+}
+`
 
-  "tripInfo":{
-    "location":"",
-    "days":"",
-    "budget":"",
-    "companions":"",
-    "style":""
-  },
+});
 
-  "recommendations":[
-    "2010051822462910",
-    "2010051822462911"
-  ],
 
-  "completed":false
+const text=response.text ?? "";
+
+
+return JSON.parse(
+text
+.replace(/```json/g,"")
+.replace(/```/g,"")
+.trim()
+);
+
+
+}
+function needAI(data: any) {
+
+  return  (
+    data.province == null ||
+    data.days == null ||
+    data.budget == null ||
+    data.companion == null ||
+    !data.travelType ||
+    data.travelType.length === 0
+  );
+
 }
 
-ข้อความล่าสุดของผู้ใช้
 
-${message}
-`;
 
-  const result = await model.generateContent(prompt);
 
-  const raw = result.response.text();
-
-  console.log(raw);
-
-  const json = extractJSON(raw);
-
-  const parsed = JSON.parse(json);
-
-  return {
-    reply: parsed.reply ?? "",
-    tripInfo: parsed.tripInfo ?? {},
-    recommendations: parsed.recommendations ?? [],
-    completed: parsed.completed ?? false,
-  };
-}
-
-function extractJSON(text: string) {
-  return text
-    .replace(/```json/g, "")
-    .replace(/```/g, "")
-    .trim();
-}

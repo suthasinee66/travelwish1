@@ -11,6 +11,9 @@ import {
     Sparkles,
     MoreHorizontal,
 } from "lucide-react";
+import { useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+
 
 const navItems = [
     {
@@ -33,20 +36,24 @@ const navItems = [
         label: "Saved",
         to: "/saved",
     },
-    
+
     {
         icon: Lightbulb,
         label: "Inspiration",
         to: "/inspiration",
     },
     {
-    icon: Plus,
-    label: "Create",
-    action: "create",
-},
+        icon: Plus,
+        label: "Create",
+        action: "create",
+    },
 ];
 
-export default function Sidebar({ user }: any) {
+export default function Sidebar({
+    user,
+    chatSessions: parentChatSessions,
+    onSelectChat
+}: any) {
 
     const navigate = useNavigate();
 
@@ -63,50 +70,113 @@ export default function Sidebar({ user }: any) {
                     <div key={n.label}>
                         {n.to ? (
 
-    <Link
-        to={n.to}
-        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm rounded-md hover:bg-accent text-sidebar-foreground"
-    >
-        <n.icon className="h-[18px] w-[18px]" />
-        <span className="flex-1 text-left">{n.label}</span>
-    </Link>
+                            <Link
+                                to={n.to}
+                                className="w-full flex items-center gap-3 px-3 py-2.5 text-sm rounded-md hover:bg-accent text-sidebar-foreground"
+                            >
+                                <n.icon className="h-[18px] w-[18px]" />
+                                <span className="flex-1 text-left">{n.label}</span>
+                            </Link>
 
-) : (
+                        ) : (
 
-    <button
-        onClick={() => {
+                            <button
+                                onClick={() => {
 
-            if(n.action === "create"){
-                setShowCreateModal(true);
-            }
+                                    if (n.action === "create") {
+                                        setShowCreateModal(true);
+                                    }
 
-        }}
-        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm rounded-md hover:bg-accent text-sidebar-foreground"
-    >
-        <n.icon className="h-[18px] w-[18px]" />
-        <span className="flex-1 text-left">
-            {n.label}
-        </span>
-    </button>
+                                }}
+                                className="w-full flex items-center gap-3 px-3 py-2.5 text-sm rounded-md hover:bg-accent text-sidebar-foreground"
+                            >
+                                <n.icon className="h-[18px] w-[18px]" />
+                                <span className="flex-1 text-left">
+                                    {n.label}
+                                </span>
+                            </button>
 
-)}
+                        )}
                     </div>
                 ))}
 
-                <button className="mt-4 w-full text-sm font-medium bg-secondary hover:bg-accent rounded-full py-2.5">
-                    New chat
-                </button>
+                <button
+onClick={()=>{
+
+    navigate({
+        to:"/home"
+    });
+
+}}
+className="
+mt-4
+w-full
+text-sm
+font-medium
+bg-secondary
+hover:bg-accent
+rounded-full
+py-2.5
+"
+>
+    + New chat
+</button>
+<div className="mt-5 space-y-1">
+
+<h3 className="
+text-xs
+text-muted-foreground
+px-3
+mb-2
+">
+Recent chats
+</h3>
+
+{
+parentChatSessions?.map((chat)=>(
+
+<button
+
+key={chat.id}
+
+onClick={()=>{
+
+console.log("CLICK CHAT:", chat.id);
+
+onSelectChat(chat.id);
+
+}}
+
+className="
+w-full
+text-left
+px-3
+py-2
+rounded-lg
+hover:bg-accent
+text-sm
+truncate
+"
+
+>
+
+<MessageCircle
+size={15}
+className="inline mr-2"
+/>
+
+{chat.title || "New trip"}
+
+</button>
+
+
+))
+}
+
+
+</div>
             </nav>
 
-            {/* PayPal promo */}
-            <div className="m-3 rounded-2xl overflow-hidden relative p-4 text-sm text-white"
-                style={{ background: "linear-gradient(135deg, oklch(0.75 0.15 320), oklch(0.7 0.18 260))" }}>
-                <button className="absolute top-2 right-2 text-white/80">×</button>
-                <div className="font-semibold">PayPal</div>
-                <div className="font-bold text-base mt-1">Fly Now. Pay Later.</div>
-                <div className="text-xs mt-1 opacity-90">Get 5K points when you spend $250.</div>
-                <a className="text-xs underline mt-1 inline-block" href="#">Save offer</a>
-            </div>
 
             <div className="border-t border-border p-3 flex items-center gap-2">
                 <div className="h-8 w-8 rounded-full bg-gradient-to-br from-pink-400 to-orange-400" />
@@ -127,10 +197,10 @@ export default function Sidebar({ user }: any) {
                 <span>Terms</span>·<span>Privacy</span>
                 <div className="mt-1">© 2026 TravelWise, Inc.</div>
             </div>
-{showCreateModal && (
+            {showCreateModal && (
 
-<div
-    className="
+                <div
+                    className="
         fixed
         inset-0
         bg-black/40
@@ -139,49 +209,49 @@ export default function Sidebar({ user }: any) {
         justify-center
         z-50
     "
-    onClick={() => setShowCreateModal(false)}
->
+                    onClick={() => setShowCreateModal(false)}
+                >
 
 
-<div
-    className="
+                    <div
+                        className="
         bg-white
         rounded-3xl
         p-8
         w-[420px]
         shadow-xl
     "
-    onClick={(e)=>e.stopPropagation()}
->
+                        onClick={(e) => e.stopPropagation()}
+                    >
 
 
-<h2 className="text-2xl font-semibold">
-    Create New Trip
-</h2>
+                        <h2 className="text-2xl font-semibold">
+                            Create New Trip
+                        </h2>
 
 
-<p className="text-gray-500 mt-2">
-    Choose how you want to plan your trip
-</p>
+                        <p className="text-gray-500 mt-2">
+                            Choose how you want to plan your trip
+                        </p>
 
 
 
-<div className="mt-6 space-y-4">
+                        <div className="mt-6 space-y-4">
 
 
-<button
+                            <button
 
-onClick={()=>{
+                                onClick={() => {
 
-    setShowCreateModal(false);
+                                    setShowCreateModal(false);
 
-    navigate({
-        to:"/create_withAI"
-    });
+                                    navigate({
+                                        to: "/create_withAI"
+                                    });
 
-}}
+                                }}
 
-className="
+                                className="
 w-full
 border
 rounded-2xl
@@ -190,13 +260,13 @@ text-left
 hover:bg-gray-50
 "
 
->
+                            >
 
-<div className="flex gap-3 items-center">
+                                <div className="flex gap-3 items-center">
 
 
-<div
-className="
+                                    <div
+                                        className="
 h-10
 w-10
 rounded-full
@@ -206,45 +276,45 @@ flex
 items-center
 justify-center
 "
->
-<Sparkles size={18}/>
-</div>
+                                    >
+                                        <Sparkles size={18} />
+                                    </div>
 
 
-<div>
+                                    <div>
 
-<h3 className="font-semibold">
-Plan with AI
-</h3>
+                                        <h3 className="font-semibold">
+                                            Plan with AI
+                                        </h3>
 
-<p className="text-sm text-gray-500">
-AI creates your itinerary
-</p>
+                                        <p className="text-sm text-gray-500">
+                                            AI creates your itinerary
+                                        </p>
 
-</div>
-
-
-</div>
+                                    </div>
 
 
-</button>
+                                </div>
+
+
+                            </button>
 
 
 
 
-<button
+                            <button
 
-onClick={()=>{
+                                onClick={() => {
 
-    setShowCreateModal(false);
+                                    setShowCreateModal(false);
 
-    navigate({
-        to:"/create_withManual"
-    });
+                                    navigate({
+                                        to: "/create_withManual"
+                                    });
 
-}}
+                                }}
 
-className="
+                                className="
 w-full
 border
 rounded-2xl
@@ -253,13 +323,13 @@ text-left
 hover:bg-gray-50
 "
 
->
+                            >
 
-<div className="flex gap-3 items-center">
+                                <div className="flex gap-3 items-center">
 
 
-<div
-className="
+                                    <div
+                                        className="
 h-10
 w-10
 rounded-full
@@ -268,39 +338,40 @@ flex
 items-center
 justify-center
 "
->
-<Plus size={18}/>
-</div>
+                                    >
+                                        <Plus size={18} />
+                                    </div>
 
 
-<div>
+                                    <div>
 
-<h3 className="font-semibold">
-Create Manually
-</h3>
+                                        <h3 className="font-semibold">
+                                            Create Manually
+                                        </h3>
 
-<p className="text-sm text-gray-500">
-Choose places yourself
-</p>
+                                        <p className="text-sm text-gray-500">
+                                            Choose places yourself
+                                        </p>
 
-</div>
-
-
-</div>
+                                    </div>
 
 
-</button>
+                                </div>
 
 
-</div>
+                            </button>
 
 
-</div>
+                        </div>
 
 
-</div>
+                    </div>
 
-)}
+
+                </div>
+
+            )}
         </aside>
     );
+    
 }
