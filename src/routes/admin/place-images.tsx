@@ -32,11 +32,12 @@ function PlaceImagesPage(){
     ""
   ]);
 
-
+  const [type,setType] = useState<
+  "attraction" | "restaurant"
+>("attraction");
 async function loadPlaces(){
 
   setLoading(true);
-
 
   let allPlaces:any[] = [];
 
@@ -47,45 +48,77 @@ async function loadPlaces(){
 
   while(true){
 
+    const query =
+      type === "attraction"
+      ?
+      supabase
+        .from("attraction")
+        .select(`
+          att_id,
+          name_th,
+          province,
+          images
+        `)
+      :
+      supabase
+        .from("restaurant")
+        .select(`
+          id,
+          place_name_th,
+          province_name_th,
+          images
+        `);
+
+
+
     const {
       data,
       error
-    } = await supabase
-      .from("attraction")
-      .select(`
-        att_id,
-        name_th,
-        province,
-        images
-      `)
-      .order("name_th")
+    } = await query
+      .order(
+        type === "attraction"
+        ? "name_th"
+        : "place_name_th"
+      )
       .range(
         from,
         from + pageSize - 1
       );
 
 
-    if(error){
 
+    if(error){
       console.error(error);
       break;
-
     }
 
 
-    if(!data || data.length === 0){
+
+    if(!data || data.length===0)
       break;
-    }
+
+
+
+    const mapped =
+      type === "attraction"
+      ?
+      data
+      :
+      data.map(r=>({
+        att_id:r.id,
+        name_th:r.place_name_th,
+        province:r.province_name_th,
+        images:r.images
+      }));
 
 
     allPlaces.push(
-      ...data
+      ...mapped
     );
 
 
-    if(data.length < pageSize){
+    if(data.length < pageSize)
       break;
-    }
 
 
     from += pageSize;
@@ -98,7 +131,7 @@ async function loadPlaces(){
 
 
   console.log(
-    "จำนวนสถานที่ทั้งหมด:",
+    type,
     allPlaces.length
   );
 
@@ -110,8 +143,10 @@ async function loadPlaces(){
 
 
   useEffect(()=>{
-    loadPlaces();
-  },[]);
+
+  loadPlaces();
+
+},[type]);
 
 
 
@@ -172,61 +207,68 @@ async function loadPlaces(){
 
 
 
+async function saveImages(){
+
+  if(!selected)
+    return;
 
 
-  async function saveImages(){
-
-    if(!selected)
-      return;
-
-
-    const images =
-      urls.filter(
-        url =>
-        url.trim() !== ""
-      );
-
-
-    const {error} =
-      await supabase
-        .from("attraction")
-        .update({
-          images
-        })
-        .eq(
-          "att_id",
-          selected.att_id
-        );
-
-
-    if(error){
-
-      console.error(error);
-      return;
-
-    }
-
-
-    setPlaces(prev =>
-      prev.map(item =>
-        item.att_id === selected.att_id
-        ?
-        {
-          ...item,
-          images
-        }
-        :
-        item
-      )
+  const images =
+    urls.filter(
+      url =>
+      url.trim() !== ""
     );
 
 
-    setSelected(null);
+  const table =
+    type === "attraction"
+    ? "attraction"
+    : "restaurant";
+
+
+  const idColumn =
+    type === "attraction"
+    ? "att_id"
+    : "id";
+
+
+  const {error} =
+    await supabase
+      .from(table)
+      .update({
+        images
+      })
+      .eq(
+        idColumn,
+        selected.att_id
+      );
+
+
+  if(error){
+
+    console.error(error);
+    return;
 
   }
 
 
+  setPlaces(prev =>
+    prev.map(item =>
+      item.att_id === selected.att_id
+      ?
+      {
+        ...item,
+        images
+      }
+      :
+      item
+    )
+  );
 
+
+  setSelected(null);
+
+}
 
 
   const filtered =
@@ -256,45 +298,87 @@ async function loadPlaces(){
         mx-auto
       ">
 
-
-        <h1 className="
-          text-3xl
-          font-bold
-          mb-6
-        ">
-          Place Images Manager
-        </h1>
-
+<h1 className="
+  text-3xl
+  font-bold
+  mb-6
+">
+  Place Images Manager
+</h1>
 
 
-        <div className="
-          bg-white
-          rounded-xl
-          p-4
-          mb-6
-          flex
-          gap-3
-        ">
+{/* เลือกประเภท */}
+<div className="
+  flex
+  gap-3
+  mb-5
+">
 
-          <Search/>
+  <button
+    onClick={()=>setType("attraction")}
+    className={`
+      px-4
+      py-2
+      rounded-lg
+      ${
+        type==="attraction"
+        ? "bg-black text-white"
+        : "bg-gray-200"
+      }
+    `}
+  >
+    สถานที่ท่องเที่ยว
+  </button>
 
-          <input
-            className="
-              flex-1
-              outline-none
-            "
-            placeholder="
-              ค้นหาสถานที่
-            "
-            value={search}
-            onChange={
-              e=>setSearch(
-                e.target.value
-              )
-            }
-          />
 
-        </div>
+  <button
+    onClick={()=>setType("restaurant")}
+    className={`
+      px-4
+      py-2
+      rounded-lg
+      ${
+        type==="restaurant"
+        ? "bg-black text-white"
+        : "bg-gray-200"
+      }
+    `}
+  >
+    ร้านอาหาร
+  </button>
+
+</div>
+
+
+
+<div className="
+  bg-white
+  rounded-xl
+  p-4
+  mb-6
+  flex
+  gap-3
+">
+
+  <Search/>
+
+  <input
+    className="
+      flex-1
+      outline-none
+    "
+    placeholder="
+      ค้นหาสถานที่
+    "
+    value={search}
+    onChange={
+      e=>setSearch(
+        e.target.value
+      )
+    }
+  />
+
+</div>
 
 
 

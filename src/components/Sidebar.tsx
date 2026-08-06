@@ -52,8 +52,10 @@ const navItems = [
 export default function Sidebar({
     user,
     chatSessions: parentChatSessions,
-    onSelectChat
+    onSelectChat,
+    onNewChat,
 }: any) {
+    console.log("SIDEBAR CHAT:", parentChatSessions);
 
     const navigate = useNavigate();
 
@@ -101,13 +103,7 @@ export default function Sidebar({
                 ))}
 
                 <button
-onClick={()=>{
-
-    navigate({
-        to:"/home"
-    });
-
-}}
+onClick={onNewChat}
 className="
 mt-4
 w-full

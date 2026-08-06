@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  Hotel,
   Sparkles,
   MessageCircle,
   Briefcase,
@@ -37,7 +38,7 @@ import {
   Gem,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState, useMemo } from "react";
 import { getRecommendations } from "@/lib/recommend/getRecommendations";
 import { getRecommendations as getInspireVideos } from "@/lib/inspire/getRecommendations";
 import { Link } from "@tanstack/react-router";
@@ -56,7 +57,27 @@ import {
   APIProvider,
   Map,
   AdvancedMarker,
+  useMap,
 } from "@vis.gl/react-google-maps";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+
+import { CSS } from "@dnd-kit/utilities";
+import googleMapIcon from "../assets/google-map.png";
+
 
 
 
@@ -382,6 +403,303 @@ ${tripInput.budget
   )
 
 }
+function MapUpdater({
+  center
+}: {
+  center: {
+    lat: number;
+    lng: number;
+  }
+}) {
+
+  const map = useMap();
+
+  useEffect(() => {
+
+    if (!map) return;
+
+    map.panTo(center);
+
+  }, [
+    map,
+    center.lat,
+    center.lng
+  ]);
+
+  return null;
+}
+
+function MapRoute({
+  places,
+  onRouteLoaded,
+}: {
+  places: any[];
+  onRouteLoaded: (legs: any[]) => void;
+}) {
+
+  const map = useMap();
+
+
+  useEffect(()=>{
+
+    if(!map) return;
+
+    if(places.length < 2) return;
+
+
+    async function drawRoute(){
+
+      const response = await fetch(
+        "https://routes.googleapis.com/directions/v2:computeRoutes",
+        {
+          method:"POST",
+
+          headers:{
+            "Content-Type":"application/json",
+
+            "X-Goog-Api-Key":
+              import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+
+            "X-Goog-FieldMask":
+    "routes.polyline.encodedPolyline,routes.legs.distanceMeters,routes.legs.duration"
+          },
+
+
+          body:JSON.stringify({
+
+            origin:{
+              location:{
+                latLng:{
+                  latitude:
+                  Number(
+                    places[0].location.latitude
+                  ),
+
+                  longitude:
+                  Number(
+                    places[0].location.longitude
+                  )
+                }
+              }
+            },
+
+
+            destination:{
+              location:{
+                latLng:{
+                  latitude:
+                  Number(
+                    places[places.length-1]
+                    .location.latitude
+                  ),
+
+                  longitude:
+                  Number(
+                    places[places.length-1]
+                    .location.longitude
+                  )
+                }
+              }
+            },
+
+
+            intermediates:
+              places
+              .slice(1,-1)
+              .map(p=>({
+                location:{
+                  latLng:{
+                    latitude:
+                    Number(
+                    p.location.latitude
+                    ),
+
+                    longitude:
+                    Number(
+                    p.location.longitude
+                    )
+                  }
+                }
+              })),
+
+
+            travelMode:
+              "DRIVE",
+
+
+            optimizeWaypointOrder:false
+
+          })
+
+        }
+      );
+
+
+      const data =
+        await response.json();
+        onRouteLoaded(data.routes?.[0]?.legs || []);
+
+
+      const encoded =
+        data.routes?.[0]
+        ?.polyline
+        ?.encodedPolyline;
+
+
+      if(!encoded) return;
+
+const path =
+  google.maps.geometry.encoding.decodePath(encoded);
+
+
+      const polyline =
+        new google.maps.Polyline({
+
+          path,
+
+          strokeColor:"#4285F4",
+
+          strokeWeight:6,
+
+          strokeOpacity:1
+
+        });
+
+
+
+      polyline.setMap(map);
+
+
+
+      return ()=>{
+
+        polyline.setMap(null);
+
+      };
+
+    }
+
+
+    drawRoute();
+
+
+  },[
+ map,
+ JSON.stringify(places)
+]);
+
+
+  return null;
+
+}
+
+function SortablePlaceItem({
+  item,
+  index,
+  findPlace,
+  findRestaurant,
+}: any) {
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({
+    id:
+      item.restaurant_id ??
+      item.place_id
+  });
+
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+
+  return (
+
+    <div
+  ref={setNodeRef}
+  style={style}
+  {...attributes}
+  {...listeners}
+  className="
+    flex
+    items-center
+    gap-3
+    border
+    rounded-2xl
+    p-3
+    bg-white
+    shadow-sm
+    cursor-grab
+  "
+>
+
+  {/* ลำดับ */}
+  <div
+    className="
+      w-8
+      h-8
+      rounded-full
+      bg-black
+      text-white
+      flex
+      items-center
+      justify-center
+      font-bold
+      shrink-0
+    "
+  >
+    {index + 1}
+  </div>
+{/* รูป */}
+{item.images?.[0] ? (
+  <img
+    src={item.images[0]}
+    alt={item.name}
+    className="
+      w-14
+      h-14
+      rounded-xl
+      object-cover
+      shrink-0
+    "
+  />
+) : (
+  <div
+    className="
+      w-14
+      h-14
+      rounded-xl
+      bg-gray-200
+      shrink-0
+    "
+  />
+)}
+
+  {/* ชื่อ */}
+  <div className="flex-1">
+
+    <div className="font-semibold text-sm">
+      {item.name}
+    </div>
+
+    <div className="text-xs text-gray-400">
+      {item.period}
+    </div>
+
+  </div>
+
+</div>
+
+  );
+
+}
+
 function TripPlanPanel({
   plannerJson,
   plan,
@@ -403,6 +721,73 @@ function TripPlanPanel({
   console.log("🔥 TripPlanPanel RENDER");
 
   const [selectedDay, setSelectedDay] = useState(0);
+  const [routePlaces, setRoutePlaces] = useState<any[]>([]);
+  const [routePlacesByDay,setRoutePlacesByDay] = useState<any>({});
+  const [routeLegs, setRouteLegs] = useState<any[]>([]);
+  const [hotelModal, setHotelModal] = useState(false);
+const [hotelSearch, setHotelSearch] = useState("");
+const [hotels, setHotels] = useState<any[]>([]);
+const [hotelLoading, setHotelLoading] = useState(false);
+const filteredHotels = useMemo(() => {
+
+  const keyword = hotelSearch.toLowerCase();
+
+  return hotels.filter((hotel) => {
+
+    const thaiName =
+      hotel.acc_name_th
+        ?.toLowerCase() || "";
+
+    const engName =
+      hotel.acc_name_en
+        ?.toLowerCase() || "";
+
+
+    return (
+      thaiName.includes(keyword) ||
+      engName.includes(keyword)
+    );
+
+  });
+
+}, [hotels, hotelSearch]);
+
+  const loadHotels = async () => {
+    console.log("🔥 LOAD HOTELS START");
+
+  setHotelLoading(true);
+
+  const { data, error } = await supabase
+    .from("accommodation")
+    .select(`
+      acc_id,
+      acc_name_th,
+      acc_name_en,
+      province_name_th,
+      acc_address,
+      latitude,
+      longitude,
+      star_level,
+      accom_price_name,
+      images
+
+    `)
+    .eq("province_name_th", tripInput.province)
+    .order("star_level", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    setHotelLoading(false);
+    return;
+  }
+
+  setHotels(data || []);
+  console.log("HOTELS:", data);
+console.log("FIRST HOTEL:", data?.[0]);
+  setHotelLoading(false);
+
+};
+
   const getCoordinates = (places: any[]) => {
 
     const place = places.find(
@@ -426,6 +811,96 @@ function TripPlanPanel({
     };
 
   };
+
+const openGoogleMaps = (items:any[]) => {
+
+  const locations = items
+    .map(item => {
+
+      let place;
+
+      if(item.restaurant_id){
+        place = findRestaurant(item.restaurant_id);
+      }else{
+        place = findPlace(item.place_id);
+      }
+
+      if(
+        place?.latitude &&
+        place?.longitude
+      ){
+        return `${place.latitude},${place.longitude}`;
+      }
+
+      return null;
+
+    })
+    .filter(Boolean);
+
+
+  if(locations.length === 0) return;
+
+
+  const url =
+    `https://www.google.com/maps/dir/${locations.join("/")}`;
+
+
+  window.open(url, "_blank");
+
+};
+
+const handleDragEnd = (event:any)=>{
+
+ const {
+   active,
+   over
+ } = event;
+
+
+ if(!over) return;
+
+
+ if(active.id === over.id)
+   return;
+
+
+
+ setRoutePlaces((items)=>{
+
+   const oldIndex =
+     items.findIndex(
+       x =>
+       (x.restaurant_id ?? x.place_id)
+       === active.id
+     );
+
+
+   const newIndex =
+     items.findIndex(
+       x =>
+       (x.restaurant_id ?? x.place_id)
+       === over.id
+     );
+
+
+   return arrayMove(
+     items,
+     oldIndex,
+     newIndex
+   );
+
+ });
+
+
+};
+
+const sensors = useSensors(
+  useSensor(PointerSensor,{
+    activationConstraint:{
+      distance:5
+    }
+  })
+);
 
   const plannerItems = Array.isArray(plannerJson)
   ? plannerJson
@@ -470,16 +945,31 @@ const markdownDays =
 
     }) || [];
 
+const days = useMemo(()=>{
 
-const days = Array.from(
-  new Set(plannerItems.map(x => x.day))
+return Array.from(
+  new Set(
+    plannerItems.map(x => Number(x.day))
+  )
 ).map(day => {
 
+
   const items = plannerItems
-    .filter(x => x.day === day)
-    .map(item => ({
+    .filter(
+      x => Number(x.day) === Number(day)
+    )
+    .filter(
+      (item,index,array)=>
+        array.findIndex(
+          x =>
+          (x.restaurant_id ?? x.place_id)
+          ===
+          (item.restaurant_id ?? item.place_id)
+        ) === index
+    )
+    .map(item=>({
       ...item,
-      type: item.restaurant_id
+      type:item.restaurant_id
         ? "restaurant"
         : "place"
     }));
@@ -487,11 +977,17 @@ const days = Array.from(
 
   return {
     day,
-    title: markdownDays[day - 1]?.title || "",
+    title: markdownDays[day-1]?.title || "",
     items
   };
 
+
 });
+
+},[
+ plannerItems,
+ markdownDays
+]);
 
   const findPlace = (placeId: string) => {
 
@@ -522,6 +1018,10 @@ const findRestaurant = (restaurantId: string) => {
     restaurantId,
     result
   );
+  console.log(
+  "ALL RESTAURANT IDS",
+  restaurants.slice(0,10)
+);
 
 
   return result;
@@ -541,52 +1041,115 @@ console.log(
   "ALL DAYS",
   days
 );
-const mapPlaces =
-  days[selectedDay]?.items
-    .map((item, index) => {
+const mapPlaces = useMemo(()=>{
 
-      let location;
-      let name;
+  const result:any[] = [];
 
 
-      // 🍜 restaurant
-      if (item.restaurant_id) {
+  days[selectedDay]?.items.forEach((item)=>{
 
-        location = findRestaurant(
-          item.restaurant_id
+
+    // =====================
+    // เพิ่มสถานที่
+    // =====================
+
+    const place = findPlace(
+      item.place_id
+    );
+
+
+    if(place){
+
+      const exist =
+        result.find(
+          x =>
+            x.type === "place" &&
+            x.place_id === item.place_id
         );
 
-        name = location?.place_name_th;
 
+      if(!exist){
 
-      } 
-      // 🏔 attraction
-      else {
+        result.push({
 
-        location = findPlace(
-          item.place_id
-        );
+          ...item,
 
-        name = location?.name_th;
+          type:"place",
+
+          location:place,
+
+          name:place.name_th,
+
+          images: place.images,
+
+        });
 
       }
 
+    }
 
-      return {
-        ...item,
-        number: index + 1,
-        location,
-        name
-      };
 
-    })
-    .filter(
+
+    // =====================
+    // เพิ่มร้านอาหาร
+    // =====================
+if (item.restaurant_id) {
+  const restaurant = findRestaurant(item.restaurant_id);
+
+  if (restaurant) {
+    result.push({
+      ...item,
+      type: "restaurant",
+      location: restaurant,
+      name:
+        restaurant.place_name_th ??
+        restaurant.place_name_en ??
+        "ร้านอาหาร",
+
+       images: restaurant.images, 
+    });
+  }
+}
+
+
+  });
+
+
+return result
+.filter(
+  x =>
+    x.location?.latitude &&
+    x.location?.longitude
+)
+.filter(
+  (item,index,array)=>
+    array.findIndex(
       x =>
-        x.location?.latitude &&
-        x.location?.longitude
-    ) || [];
+        x.type === item.type &&
+        x.place_id === item.place_id &&
+        x.restaurant_id === item.restaurant_id
+    ) === index
+);
 
 
+},[
+  days,
+  selectedDay,
+  allPlaces,
+  restaurants
+]);
+useEffect(() => {
+
+  console.log("CHANGE DAY RESET");
+  console.log("NEW MAP PLACES", mapPlaces);
+
+  setRoutePlaces(
+    [...mapPlaces]
+  );
+
+}, [
+  selectedDay
+]);
 
 console.log(
   "FINAL MAP PLACES",
@@ -617,6 +1180,7 @@ mapCenter;
 
   return (
     <div className="flex flex-col gap-3 w-full">
+      
 
       {/* MAP */}
       <div
@@ -628,24 +1192,33 @@ mapCenter;
       >
 
         <APIProvider
-          apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
-        >
-
-          <Map
-            defaultZoom={13}
-            center={markerCenter}
-            mapId="travelwise-map"
-          >
-
-            {
-  mapPlaces.map((place) => (
-    <AdvancedMarker
- key={place.restaurant_id ?? place.place_id}
- position={{
-   lat:Number(place.location.latitude),
-   lng:Number(place.location.longitude)
- }}
+  apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
+  libraries={["geometry"]}
 >
+<Map
+  defaultCenter={markerCenter}
+  defaultZoom={13}
+  mapId="9d5ca48506fddf5eb0fea298"
+  gestureHandling="greedy"
+  draggable={true}
+  disableDefaultUI={false}
+>
+
+  <MapUpdater center={markerCenter}/>
+
+            <MapRoute
+    places={routePlaces}
+    onRouteLoaded={setRouteLegs}
+/>
+{
+  routePlaces.map((place,index)=>(
+    <AdvancedMarker
+      key={`${place.type}-${place.restaurant_id ?? place.place_id}`}
+      position={{
+        lat:Number(place.location.latitude),
+        lng:Number(place.location.longitude)
+      }}
+    >
       <div
         className="
         w-8
@@ -662,7 +1235,7 @@ mapCenter;
         border-white
         "
       >
-        {place.number}
+        {index + 1}
       </div>
 
     </AdvancedMarker>
@@ -682,16 +1255,188 @@ mapCenter;
       {/* HEADER */}
       <div>
 
+  <div className="flex items-start justify-between">
 
-        <h1 className="text-xl font-bold">
-          Trip to {tripInput.province}
-        </h1>
+    <div>
+      <h1 className="text-xl font-bold">
+        Trip to {tripInput.province}
+      </h1>
+
+      <p className="text-xs text-gray-500">
+        {tripInput.days} days itinerary
+      </p>
+    </div>
+<div className="relative">
+  <button
+  onClick={async () => {
+    console.log("CLICK HOTEL BUTTON");
+
+    if (hotelModal) {
+      setHotelModal(false);
+      return;
+    }
+
+    setHotelModal(true);
+
+    if (hotels.length === 0) {
+      await loadHotels();
+    }
+  }}
+  className="
+    flex
+    items-center
+    gap-2
+    px-4
+    py-2
+    rounded-xl
+    border
+    bg-white
+    hover:bg-gray-100
+    shadow-sm
+    text-sm
+    font-medium
+  "
+>
+  <Hotel size={16} />
+  เพิ่มที่พัก
+</button>
+
+  {hotelModal && (
+    <div
+      className="
+        absolute
+        right-0
+        top-full
+        mt-2
+        w-[360px]
+        rounded-2xl
+        border
+        bg-white
+        shadow-xl
+        p-4
+        z-50
+      "
+    >
+      <input
+        value={hotelSearch}
+        onChange={(e) => setHotelSearch(e.target.value)}
+        placeholder="ค้นหาโรงแรม..."
+        className="
+          w-full
+          border
+          rounded-xl
+          px-4
+          py-3
+          outline-none
+        "
+      />
+      <div className="
+mt-3
+max-h-72
+overflow-y-auto
+space-y-2
+">
+
+{
+hotelLoading ? (
+
+<div className="text-sm text-gray-500">
+กำลังโหลดโรงแรม...
+</div>
+
+)
+
+:
+filteredHotels.map(hotel => (
+
+<button
+key={hotel.acc_id}
+className="
+w-full
+flex
+gap-3
+text-left
+border
+rounded-xl
+p-3
+hover:bg-gray-100
+"
+>
+
+{/* รูปโรงแรม */}
+{hotel.images ? (
+
+<img
+src={hotel.images}
+alt={hotel.acc_name_th}
+
+className="
+w-16
+h-16
+rounded-xl
+object-cover
+shrink-0
+"
+/>
+
+) : (
+
+<div
+className="
+w-16
+h-16
+rounded-xl
+bg-gray-200
+shrink-0
+flex
+items-center
+justify-center
+"
+>
+<Hotel size={22} className="text-gray-400"/>
+</div>
+
+)}
 
 
-        <p className="text-xs text-gray-500">
-          {tripInput.days} days itinerary
-        </p>
+<div className="flex-1">
+<div className="font-semibold text-sm">
+  {hotel.acc_name_th}
+</div>
 
+<div className="
+  text-xs
+  text-gray-600
+  mt-0.5
+">
+  {hotel.acc_name_en}
+</div>
+
+
+<div className="text-xs text-gray-500">
+{hotel.province_name_th}
+</div>
+
+
+<div className="text-xs text-gray-400">
+⭐ {hotel.star_level ?? "-"}
+</div>
+
+</div>
+
+
+</button>
+
+))
+
+}
+
+</div>
+    </div>
+  )}
+</div>
+
+  </div>
 
 
         {/* TABS */}
@@ -705,10 +1450,13 @@ mapCenter;
         >
 
           {days.map((_, index) => (
+<button
+  key={index}
+  onClick={() => {
+    setSelectedDay(index);
 
-            <button
-              key={index}
-              onClick={() => setSelectedDay(index)}
+  }}
+
               className={`
               text-xs
               pb-2
@@ -731,135 +1479,132 @@ mapCenter;
 
 
         {/* PLACE LIST */}
-        <div className="mt-3 space-y-3 ml-6">
+       <div className="mt-3 space-y-3 ml-6">
+<div className="flex items-center justify-between">
 
-<h2 className="text-sm font-bold">
-  Day {days[selectedDay]?.day}
-  {" "}
-  {days[selectedDay]?.title}
-</h2>
-{
-days[selectedDay]?.items?.map((item,index)=>(
-
-<div
-key={index}
-className="
-flex
-items-center
-gap-3
-border
-rounded-2xl
-p-3
-bg-white
-shadow-sm
-"
->
-
-{/* Number Circle */}
-
-<div
-className="
-w-8
-h-8
-rounded-full
-bg-black
-text-white
-flex
-items-center
-justify-center
-font-bold
-text-sm
-shrink-0
-"
->
-{index + 1}
-</div>
+  <h2 className="text-sm font-bold">
+    Day {days[selectedDay]?.day}
+    {" "}
+    {days[selectedDay]?.title}
+  </h2>
 
 
-{/* Image */}
-
-<div
-className="
-w-16
-h-16
-rounded-xl
-overflow-hidden
-bg-gray-200
-shrink-0
-"
->
-<img
-src={
-  item.type === "restaurant"
-    ? findRestaurant(item.restaurant_id)?.images?.[0]
-    : findPlace(item.place_id)?.images?.[0]
-}
-className="
-w-full
-h-full
-object-cover
-"
+  <button
+    onClick={() =>
+      openGoogleMaps(
+        days[selectedDay]?.items || []
+      )
+    }
+    className="
+      flex
+      items-center
+      gap-1
+      text-xs
+      px-3
+      py-1.5
+      rounded-full
+      border
+      hover:bg-gray-100
+    "
+  >
+    <img
+  src={googleMapIcon}
+  className="w-5 h-7"
 />
+</button>
 
 </div>
-
-
-{/* Content */}
-
-<div className="flex-1">
-
-<div className="
-font-semibold
-text-sm
-line-clamp-2
-">
-
-{
- item.type === "restaurant"
- ? item.restaurant_name
- : item.place_name
-}
-
-</div>
-
-
-<div className="
-text-xs
-text-gray-400
-mt-1
-">
-
-{item.period}
-
-</div>
-
-
-{
-item.type === "restaurant" && (
-
-<div
-className="
-text-xs
-text-orange-600
-mt-1
-"
+<DndContext
+ sensors={sensors}
+ collisionDetection={closestCenter}
+ onDragEnd={handleDragEnd}
 >
-🍽 Restaurant
-</div>
 
-)
 
+<SortableContext
+
+items={
+ routePlaces.map(
+ item =>
+ item.restaurant_id ??
+ item.place_id
+ )
 }
 
+strategy={
+ verticalListSortingStrategy
+}
 
-</div>
+>
 
+{
+routePlaces.map((item, index) => (
 
-</div>
+  <Fragment
+key={`${selectedDay}-${item.type}-${item.restaurant_id ?? item.place_id}`}
+>
+
+    <SortablePlaceItem
+      item={item}
+      index={index}
+      findPlace={findPlace}
+      findRestaurant={findRestaurant}
+    />
+
+    {index < routePlaces.length - 1 &&
+      routeLegs[index] && (
+
+      <div
+        className="
+          ml-10
+          py-2
+          flex
+          items-center
+          gap-2
+          text-sm
+          text-gray-500
+        "
+      >
+        <div className="w-px h-6 bg-gray-300 ml-2" />
+
+        <span>
+          {" "}
+          {routeLegs[index].distanceMeters < 1000
+            ? `${routeLegs[index].distanceMeters} เมตร`
+            : `${(
+                routeLegs[index].distanceMeters / 1000
+              ).toFixed(1)} กม.`}
+        </span>
+
+      </div>
+
+    )}
+
+  </Fragment>
 
 ))
 }
 
+</SortableContext>
+
+</DndContext>
+
+<div className="flex justify-end mt-6">
+  <button
+    className="
+      px-5
+      py-2
+      rounded-lg
+      bg-black
+      text-white
+      text-sm
+      font-medium
+      hover:bg-gray-800
+    "
+  >
+    Save
+  </button>
+</div>
 
 </div>
 
@@ -1496,38 +2241,48 @@ ${active
     return true;
 
   };
+
+  const handleNewChat = () => {
+  setMessages([]);
+  setInput("");
+
+  setCurrentChatId(null);
+  setHasChatStarted(false);
+
+  setPlan(null);
+  setPlannerJson([]);
+  setShowTripPlan(false);
+
+  setWaitingPlanConfirm(false);
+
+  setExploreOpen(false);
+
+  // reset planner panel
+  setTripPlaces([]);
+
+  // ถ้าต้องการเริ่มทริปใหม่ด้วย
+  setTripInput({
+    province: "",
+    days: null,
+    companion: "",
+    budget: null,
+    travelType: [],
+    activities: [],
+    atmosphere: [],
+  });
+
+  setMapCenter({
+    lat: 13.7563,
+    lng: 100.5018,
+  });
+};
+
   const handleSend = async () => {
 
     if (!input.trim()) return;
     let chatId = currentChatId;
 
 
-    if (!chatId) {
-
-      const { data, error } = await supabase
-        .from("chat_sessions")
-        .insert({
-
-          user_id: user.id,
-
-          title: input.slice(0, 30),
-
-          trip_preferences: tripInput
-
-        })
-        .select()
-        .single();
-
-
-      if (data) {
-
-        chatId = data.id;
-
-        setCurrentChatId(data.id);
-
-      }
-
-    }
 
     setHasChatStarted(true);
 
@@ -1605,19 +2360,20 @@ ${active
             text: "⏳ กำลังสร้างแผนเที่ยว..."
           }
         ]);
-        const result = await createPlanner(
-  tripInput,
-  chatId!,
-  user.id
-);
+        try {
+  const result = await createPlanner(
+    tripInput,
+    chatId!,
+    user.id
+  );
 
+  console.log("RESULT =", result);
+console.log("PLANNER JSON =", result.planner_json);
 
-setPlan(result.markdown);
-
-setPlannerJson(result.planner_json);
-
-        setShowTripPlan(true);
-
+  setPlan(result.markdown);
+  setPlannerJson(result.planner_json);
+  setShowTripPlan(true);
+  
         setExploreOpen(false);
 
         setMessages(prev => [
@@ -1629,6 +2385,21 @@ setPlannerJson(result.planner_json);
         ]);
 
         return;
+
+} catch (err) {
+  console.error(err);
+
+  setMessages(prev => [
+    ...prev.slice(0, -1),
+    {
+      role: "ai",
+      text: "ขออภัย ขณะนี้ AI มีผู้ใช้งานจำนวนมาก กรุณาลองใหม่อีกครั้ง"
+    }
+  ]);
+
+  return;
+}
+
       }
     }
 
@@ -1647,6 +2418,32 @@ setPlannerJson(result.planner_json);
 
 
       return;
+
+    }
+    
+    if (!chatId) {
+
+      const title = `${tripInput.province} ${tripInput.days} วัน กับ${tripInput.companion} งบ ${tripInput.budget?.toLocaleString()} บาท`;
+
+const { data, error } = await supabase
+  .from("chat_sessions")
+  .insert({
+    user_id: user.id,
+    title,
+    trip_preferences: tripInput,
+  })
+  .select()
+  .single();
+
+
+      if (data) {
+
+        chatId = data.id;
+
+        setCurrentChatId(data.id);
+        setChatSessions((prev) => [data, ...prev]);
+
+      }
 
     }
 
@@ -2018,6 +2815,7 @@ setRestaurants(restaurantsData);
         user={user}
         chatSessions={chatSessions}
         onSelectChat={loadChatMessages}
+        onNewChat={handleNewChat}
       />
       {
         tripModal && (
@@ -2185,7 +2983,7 @@ text-xl
           />
         )}
         <header className="h-14 flex items-center px-6">
-          <button className="text-sm font-medium flex items-center gap-1">
+          <button onClick={handleNewChat} className="text-sm font-medium flex items-center gap-1">
             New chat <span className="text-muted-foreground">▾</span>
           </button>
           <div className="flex-1 flex justify-center">
@@ -2347,50 +3145,53 @@ ${m.role === "user"
 
 `}
                 >
-
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      h1: ({ children }) => (
-                        <h1 className="
-      text-2xl
-      font-bold
-      mt-8
-      mb-4
+<ReactMarkdown
+  remarkPlugins={[remarkGfm]}
+  components={{
+    h1: ({ children }) => (
+      <h1 className="
+        text-2xl
+        font-bold
+        mt-8
+        mb-4
       ">
-                          {children}
-                        </h1>
-                      ),
+        {children}
+      </h1>
+    ),
 
-                      h2: ({ children }) => (
-                        <h2 className="
-      text-xl
-      font-bold
-      mt-6
-      mb-3
+    h2: ({ children }) => (
+      <h2 className="
+        text-xl
+        font-bold
+        mt-6
+        mb-3
       ">
-                          {children}
-                        </h2>
-                      ),
+        {children}
+      </h2>
+    ),
 
-                      p: ({ children }) => (
-                        <p className="
-      leading-7
-      mb-3
+    p: ({ children }) => (
+      <p className="
+        leading-7
+        mb-3
       ">
-                          {children}
-                        </p>
-                      ),
+        {children}
+      </p>
+    ),
 
-                      li: ({ children }) => (
-                        <li className="ml-5 list-disc">
-                          {children}
-                        </li>
-                      )
-                    }}
-                  >
-                    {m.text}
-                  </ReactMarkdown>
+    li: ({ children }) => (
+      <li className="ml-5 list-disc">
+        {children}
+      </li>
+    )
+  }}
+>
+  {
+    typeof m.text === "string"
+      ? m.text
+      : m.text?.markdown ?? ""
+  }
+</ReactMarkdown>
 
 
 
@@ -3101,17 +3902,16 @@ focus:ring-black/20
 
           )}
           <div className="flex-1 flex flex-col">
-            {showTripPlan &&
-Array.isArray(plannerJson) &&
-plannerJson.length > 0 && (
-    <TripPlanPanel
- plannerJson={plannerJson}
- plan={plan}
- tripInput={tripInput}
- allPlaces={allPlaces}
- restaurants={restaurants}
- mapCenter={mapCenter}
-/>
+            {showTripPlan && (
+  <TripPlanPanel
+    key={currentChatId ?? "new"}
+    plannerJson={plannerJson}
+    plan={plan}
+    tripInput={tripInput}
+    allPlaces={allPlaces}
+    restaurants={restaurants}
+    mapCenter={mapCenter}
+  />
 )}
 
 
@@ -3147,7 +3947,7 @@ plannerJson.length > 0 && (
         gap-3
         ${exploreOpen
                       ? "grid-cols-4 w-full"
-                      : "grid-cols-3 w-[430px]"
+                      : "grid-cols-3 w-full"
                     }
       `}
                 >

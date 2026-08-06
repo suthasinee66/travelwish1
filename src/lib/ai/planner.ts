@@ -280,6 +280,12 @@ ${JSON.stringify(ranked, null, 2)}
 - ห้ามสร้างจุดชมวิวใหม่
 - ห้ามใช้ชื่อสถานที่ที่ไม่มีอยู่ใน ranked
 - ร้านอาหารต้องเลือกจาก nearbyRestaurants ของสถานที่นั้นเท่านั้น
+- restaurant_id ต้องตรงกับ place_id ของร้านอาหารใน nearbyRestaurants
+- restaurant_name ต้องตรงกับ place_name_th ของร้านอาหารใน nearbyRestaurants
+- ห้ามใช้ restaurant เป็น place โดยเด็ดขาด
+- ห้ามแก้ไข ห้ามสร้าง ห้ามเดา restaurant_id
+- ห้ามสร้าง restaurant_id ใหม่โดยเด็ดขาด
+- หากไม่มีร้านอาหารที่เหมาะสม ให้ restaurant_id และ restaurant_name เป็น null
 
 - เรียงเลือกสถานที่ตามลำดับคะแนนใน ranked
 - 1 สถานที่ใช้ได้เพียงครั้งเดียวตลอดทั้งทริป
@@ -330,8 +336,9 @@ ${tripData.atmosphere.join(",")}
 ข้อกำหนด
 
 - selectedPlaces ต้องอ้างอิงข้อมูลจาก ranked เท่านั้น
-- place_id ต้องเป็น attraction.id
-- restaurant_id ต้องเป็น restaurant.id
+- place_id ต้องตรงกับ id ของ attraction ใน ranked เท่านั้น
+- restaurant_id ต้องตรงกับ place_id ของ restaurant ใน nearbyRestaurants เท่านั้น
+- restaurant_name ต้องตรงกับ place_name_th ของ restaurant นั้น
 - หากไม่มีร้านอาหารให้เป็น null
 - markdown คือแผนเที่ยวที่ผู้ใช้เห็น
 - ห้ามมีข้อความอื่นนอก JSON
@@ -527,7 +534,9 @@ console.log("🎉 สร้างแผนเที่ยวเสร็จ");
 console.log("==================================================");
 
 
-return aiMessage;
-
+return {
+    markdown: aiMessage,
+    planner_json: selectedPlaces
+};
 }
 
