@@ -145,34 +145,37 @@
   }
 }
 
-/* TravelWise home: soft pastel coastal palette for a calm, welcoming feel. */
+/* TravelWise home: airy pastel aurora palette inspired by soft lavender, blush, aqua, and cream. */
 .travel-home {
-  --travel-ink: #3d5268;
-  --travel-moss: #86c9c2;
-  --travel-coral: #e9a6a0;
-  --travel-sun: #f3d69a;
-  --travel-sand: #fffaf4;
-  --travel-line: #eadfd5;
+  --travel-ink: #4d4a68;
+  --travel-moss: #9bd8df;
+  --travel-coral: #e8a9c8;
+  --travel-sun: #f7edbd;
+  --travel-lavender: #c5addc;
+  --travel-sand: #fffafd;
+  --travel-line: #eadff0;
   background: var(--travel-sand);
 }
 
 .travel-home aside {
-  background: linear-gradient(180deg, rgba(255, 252, 246, 0.94), rgba(239, 250, 248, 0.9)) !important;
+  background: linear-gradient(180deg, rgba(255, 250, 253, 0.92), rgba(239, 249, 252, 0.88)) !important;
   border-right: 1px solid var(--travel-line) !important;
   backdrop-filter: blur(18px);
 }
 
 .travel-main {
   background:
-    radial-gradient(circle at 12% 8%, rgba(239, 111, 97, 0.16), transparent 17rem),
-    radial-gradient(circle at 88% 18%, rgba(244, 185, 66, 0.24), transparent 22rem),
-    linear-gradient(135deg, #fffaf2 0%, #eef9f7 100%);
+    radial-gradient(ellipse 70% 48% at 88% 12%, rgba(239, 177, 210, 0.48), transparent 70%),
+    radial-gradient(ellipse 54% 58% at 8% 8%, rgba(190, 162, 214, 0.52), transparent 68%),
+    radial-gradient(ellipse 48% 42% at 96% 66%, rgba(135, 218, 225, 0.42), transparent 68%),
+    radial-gradient(ellipse 60% 38% at 14% 94%, rgba(166, 225, 232, 0.46), transparent 70%),
+    linear-gradient(135deg, #f2eafa 0%, #fff5f7 43%, #f9e7f2 70%, #e8f8f8 100%);
 }
 
 .travel-header {
-  border-bottom: 1px solid rgba(240, 223, 199, 0.8);
-  background: rgba(255, 251, 244, 0.82);
-  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(234, 223, 240, 0.78);
+  background: rgba(255, 250, 253, 0.68);
+  backdrop-filter: blur(18px);
 }
 
 .travel-header button {
