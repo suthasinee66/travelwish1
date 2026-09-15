@@ -64,38 +64,38 @@
 
 :root {
   --radius: 0.875rem;
-  --background: oklch(0.985 0.018 92);
-  --foreground: oklch(0.23 0.055 245);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.23 0.055 245);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.23 0.055 245);
-  --primary: oklch(0.58 0.19 24);
+  --background: oklch(0.985 0.012 85);
+  --foreground: oklch(0.3 0.035 250);
+  --card: oklch(0.998 0.004 90);
+  --card-foreground: oklch(0.3 0.035 250);
+  --popover: oklch(0.998 0.004 90);
+  --popover-foreground: oklch(0.3 0.035 250);
+  --primary: oklch(0.7 0.12 20);
   --primary-foreground: oklch(0.99 0.01 90);
-  --secondary: oklch(0.92 0.08 175);
-  --secondary-foreground: oklch(0.25 0.08 195);
-  --muted: oklch(0.95 0.025 90);
-  --muted-foreground: oklch(0.48 0.055 235);
-  --accent: oklch(0.8 0.16 84);
-  --accent-foreground: oklch(0.25 0.07 55);
-  --destructive: oklch(0.58 0.22 25);
+  --secondary: oklch(0.91 0.06 190);
+  --secondary-foreground: oklch(0.32 0.055 210);
+  --muted: oklch(0.955 0.018 85);
+  --muted-foreground: oklch(0.52 0.035 245);
+  --accent: oklch(0.87 0.1 85);
+  --accent-foreground: oklch(0.38 0.045 65);
+  --destructive: oklch(0.68 0.14 25);
   --destructive-foreground: oklch(0.99 0.01 90);
-  --border: oklch(0.88 0.045 88);
-  --input: oklch(0.88 0.045 88);
-  --ring: oklch(0.64 0.16 190);
-  --chart-1: oklch(0.63 0.19 25);
-  --chart-2: oklch(0.65 0.15 175);
-  --chart-3: oklch(0.75 0.17 84);
-  --chart-4: oklch(0.62 0.18 300);
-  --chart-5: oklch(0.68 0.16 145);
-  --sidebar: oklch(0.97 0.035 178);
-  --sidebar-foreground: oklch(0.25 0.07 210);
-  --sidebar-primary: oklch(0.58 0.19 24);
+  --border: oklch(0.9 0.028 90);
+  --input: oklch(0.9 0.028 90);
+  --ring: oklch(0.72 0.1 190);
+  --chart-1: oklch(0.72 0.13 20);
+  --chart-2: oklch(0.72 0.1 175);
+  --chart-3: oklch(0.82 0.12 85);
+  --chart-4: oklch(0.73 0.11 300);
+  --chart-5: oklch(0.76 0.1 145);
+  --sidebar: oklch(0.965 0.025 185);
+  --sidebar-foreground: oklch(0.34 0.045 220);
+  --sidebar-primary: oklch(0.7 0.12 20);
   --sidebar-primary-foreground: oklch(0.99 0.01 90);
-  --sidebar-accent: oklch(0.91 0.08 84);
-  --sidebar-accent-foreground: oklch(0.28 0.08 45);
-  --sidebar-border: oklch(0.86 0.06 175);
-  --sidebar-ring: oklch(0.64 0.16 190);
+  --sidebar-accent: oklch(0.91 0.065 85);
+  --sidebar-accent-foreground: oklch(0.38 0.045 65);
+  --sidebar-border: oklch(0.89 0.04 185);
+  --sidebar-ring: oklch(0.72 0.1 190);
 }
 
 .dark {
@@ -145,14 +145,14 @@
   }
 }
 
-/* TravelWise home: colorful coastal palette with a lively travel-editorial feel. */
+/* TravelWise home: soft pastel coastal palette for a calm, welcoming feel. */
 .travel-home {
-  --travel-ink: #19324a;
-  --travel-moss: #087f8c;
-  --travel-coral: #ef6f61;
-  --travel-sun: #f4b942;
-  --travel-sand: #fff8ed;
-  --travel-line: #f0dfc7;
+  --travel-ink: #3d5268;
+  --travel-moss: #86c9c2;
+  --travel-coral: #e9a6a0;
+  --travel-sun: #f3d69a;
+  --travel-sand: #fffaf4;
+  --travel-line: #eadfd5;
   background: var(--travel-sand);
 }
 
