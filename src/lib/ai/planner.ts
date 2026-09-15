@@ -1,11 +1,12 @@
 import { supabase } from "@/lib/supabase";
 import { rankPlaces } from "./algorithm";
-import { GoogleGenAI } from "@google/genai";
 import type { TripPlanInput } from "./types";
 
-const ai = new GoogleGenAI({
-    apiKey: import.meta.env.VITE_GEMINI_API_KEY,
-});
+import {
+    generateWithSelectedModel,
+    type AIModel
+} from "./ai";
+
 
 
 
@@ -153,10 +154,12 @@ async function loadAllRestaurants(province: string) {
 /*
  Main Planner
 */
+
 export async function createPlanner(
     trip: TripPlanInput,
     chatId: string,
-    userId: string
+    userId: string,
+    selectedModel: AIModel = "gemini"
 ) {
 
     console.log("==================================================");
@@ -231,6 +234,40 @@ console.log(
     "FINAL TRIP DATA",
     tripData
 );
+
+// ============================================
+// บันทึก Trip Preferences + AI Model
+// ============================================
+
+const {
+    error: sessionError
+} = await supabase
+    .from("chat_sessions")
+    .update({
+        trip_preferences: tripData,
+        ai_model: selectedModel
+    })
+    .eq("id", chatId);
+
+if (sessionError) {
+
+    console.error(
+        "❌ บันทึก chat session ไม่สำเร็จ",
+        sessionError
+    );
+
+} else {
+
+    console.log(
+        "✅ บันทึก chat session สำเร็จ"
+    );
+
+    console.log(
+        "🤖 AI Model:",
+        selectedModel
+    );
+
+}
 
 
 const ranked = rankPlaces(
@@ -312,7 +349,7 @@ ${tripData.activities.join(",")}
 - บรรยากาศ:
 ${tripData.atmosphere.join(",")}
 ====================
-รูปแบบการตอบ (สำคัญ)
+รูปแบบการตอบ
 ====================
 
 ตอบกลับเป็น JSON เท่านั้น
@@ -323,6 +360,7 @@ ${tripData.atmosphere.join(",")}
   "selectedPlaces": [
     {
       "day": 1,
+      "title": ชื่อธีมของวันที่ 1,
       "period": "Morning",
       "place_id": "...",
       "place_name": "...",
@@ -330,109 +368,84 @@ ${tripData.atmosphere.join(",")}
       "restaurant_name": "..."
     }
   ],
-  "markdown": "....แผนเที่ยว markdown ทั้งหมด...."
+  "markdown": "แผนเที่ยวทั้งหมดในรูปแบบ Markdown"
 }
 
-ข้อกำหนด
+====================
+ข้อกำหนด selectedPlaces
+====================
 
 - selectedPlaces ต้องอ้างอิงข้อมูลจาก ranked เท่านั้น
 - place_id ต้องตรงกับ id ของ attraction ใน ranked เท่านั้น
 - restaurant_id ต้องตรงกับ place_id ของ restaurant ใน nearbyRestaurants เท่านั้น
-- restaurant_name ต้องตรงกับ place_name_th ของ restaurant นั้น
-- หากไม่มีร้านอาหารให้เป็น null
-- markdown คือแผนเที่ยวที่ผู้ใช้เห็น
-- ห้ามมีข้อความอื่นนอก JSON
-
-ใช้รูปแบบนี้ทุกวัน
-
----
-
-# ✨ Day 1 - ชื่อธีมของวัน
-
-> คำอธิบายสั้นๆ 1 บรรทัด
-
-☀️ Morning
-
-📍 สถานที่
-
-- ทำอะไร
-- ใช้เวลาประมาณ ...
-- เดินทางต่อ ... นาที
-
-🍜 Lunch
-
-ร้าน ...
-
-- แนะนำเมนู
-
-🌤 Afternoon
-
-📍 สถานที่
-
-- ทำอะไร
-
-🌅 Evening
-
-📍 สถานที่
-
-- ถ่ายรูป
-- ชมวิว
-
-🌙 Dinner
-
-ร้าน ...
-
----
-
-# ✨ Day 2
-
-...
-
----
-
-# ✨ Day 3
-
-...
+- restaurant_name ต้องตรงกับ place_name_th ของ restaurant ใน nearbyRestaurants
+- หากไม่มีร้านอาหารที่เหมาะสม ให้ restaurant_id และ restaurant_name เป็น null
+- ห้ามสร้าง place_id หรือ restaurant_id ใหม่
+- ห้ามสร้างสถานที่ใหม่
+- ห้ามสร้างร้านอาหารใหม่
+- ห้ามใช้ restaurant เป็น place
+- ห้ามใช้สถานที่เดิมซ้ำตลอดทั้งทริป
+- ห้ามใช้ร้านอาหารเดิมซ้ำตลอดทั้งทริป
 
 ====================
+ข้อกำหนด Markdown
+====================
 
-ตอนท้ายให้สรุปเป็น
+markdown คือเนื้อหาแผนเที่ยวที่ผู้ใช้จะเห็น
 
----
+ต้องเขียนเป็น Markdown เท่านั้น
 
-## 💰 สรุปงบ
+คุณมีอิสระในการออกแบบรูปแบบการนำเสนอแผนเที่ยว
+ไม่จำเป็นต้องทำตาม Template ที่กำหนดไว้
 
-| รายการ | ราคา |
-|--------|------|
-| ค่าอาหาร | xxx |
-| ค่าเข้า | xxx |
-| รวม | xxx |
+สามารถเลือกใช้รูปแบบที่เหมาะสมได้ เช่น
 
----
+- Heading
+- Subheading
+- Bullet list
+- Numbered list
+- ตาราง
+- Timeline
+- Emoji
+- Highlight
+- Blockquote
+- Bold / Italic
+- หรือการผสมผสานรูปแบบ Markdown
 
-## 📌 Tips
+คุณสามารถเลือกวิธีการจัดลำดับและนำเสนอข้อมูลเอง
+โดยคำนึงถึงความอ่านง่าย ความชัดเจน และประสบการณ์ของผู้ใช้
 
-- ...
-- ...
-ห้ามมีข้อความอื่นนอก JSON
+อย่างไรก็ตาม ต้องมีข้อมูลที่จำเป็นสำหรับการวางแผนเที่ยว
+เช่น วัน เวลา สถานที่ ร้านอาหาร กิจกรรม และรายละเอียดที่เกี่ยวข้อง
 
-markdown สามารถมีรายละเอียดแผนเที่ยวทั้งหมดได้
+ห้ามสร้างข้อมูลสถานที่หรือร้านอาหารที่ไม่มีอยู่ใน ranked
 
-ให้เริ่ม markdown ด้วย
+====================
+กฎสำคัญ
+====================
 
-# ✨ Day 1
+- ใช้เฉพาะข้อมูลใน ranked ที่ส่งให้เท่านั้น
+- ห้ามใช้ความรู้ของตัวเองเพื่อสร้างสถานที่เพิ่มเติม
+- ห้ามสร้างชื่อสถานที่ ร้านอาหาร หรือ ID ใหม่
+- งบรวมต้องไม่เกิน ${tripData.budget} บาท
+- ระบุเวลาเดินทางโดยประมาณ
+- พยายามเลือกสถานที่ที่อยู่ใกล้กัน
+- คาเฟ่ควรพิจารณาจัดไว้ในช่วงบ่าย
+- จุดชมวิวควรพิจารณาจัดไว้ในช่วงเย็น
 
-ทันที
+ห้ามมีข้อความใด ๆ นอก JSON
 `;
 console.log(prompt);
     console.log("==================================================");
-    console.log("🤖 ส่งข้อมูลให้ Gemini");
-    console.log("==================================================");
+console.log(
+    `🤖 ส่งข้อมูลให้ ${selectedModel.toUpperCase()}`
+);
+console.log("==================================================");
 
-    console.log("📦 ข้อมูลผู้ใช้");
-    console.log(trip);
+console.log("📦 ข้อมูลผู้ใช้");
+console.log(trip);
 
-    console.log("📍 จำนวนสถานที่ที่ส่ง =", ranked.length);
+console.log("📍 จำนวนสถานที่ที่ส่ง =", ranked.length);
 
     console.log(
         "📋 รายชื่อสถานที่",
@@ -449,29 +462,34 @@ console.log(prompt);
     console.log
 
     console.log("📄 Prompt Length =", prompt.length);
+    const estimatedPromptTokens = Math.ceil(prompt.length / 4);
 
-    console.log("⏳ Gemini กำลังประมวลผล...");
+console.log("🔢 Estimated Input Tokens =", estimatedPromptTokens);
 
-    const start = performance.now();
+    console.log(
+    `⏳ ${selectedModel.toUpperCase()} กำลังประมวลผล...`
+);
 
-    const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: prompt,
-    config: {
-    responseMimeType: "application/json",
-    temperature: 0.2
-}
-});
+const start = performance.now();
+
+const raw = await generateWithSelectedModel(
+    selectedModel,
+    prompt
+);
 
     const end = performance.now();
 
-    console.log("✅ Gemini ตอบกลับแล้ว");
+    console.log(
+    `✅ ${selectedModel.toUpperCase()} ตอบกลับแล้ว`
+);
     console.log(
         `⏱️ ใช้เวลา ${((end - start) / 1000).toFixed(2)} วินาที`
     );
 
-    console.log("📄 Response Length =", response.text?.length ?? 0);
-const raw = response.text ?? "";
+    console.log(
+    "📄 Response Length =",
+    raw.length
+);
 
 let result;
 

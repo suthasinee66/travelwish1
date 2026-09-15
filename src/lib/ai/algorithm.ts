@@ -1,56 +1,54 @@
-import type {
-    TripPlanInput
-} from "./types";
 
-/*
- คำนวณระยะทางระหว่าง 2 จุด
- km
-*/
+import type { TripPlanInput } from "./types";
+
+import {
+    rankPlacesTDMC,
+    normalizeWeights,
+    type TDMCPlace,
+    type TDMCWeights,
+    type TDMCResult,
+    type TDMCScoredPlace,
+} from "../algorithm/tdmcAlgorithm";
+
+/* =========================================================
+   DISTANCE
+   ========================================================= */
+
 function distanceKm(
     lat1: number,
     lon1: number,
     lat2: number,
     lon2: number
-) {
+): number {
+
     if (
-        lat1 == null ||
-        lon1 == null ||
-        lat2 == null ||
-        lon2 == null
+        !Number.isFinite(lat1) ||
+        !Number.isFinite(lon1) ||
+        !Number.isFinite(lat2) ||
+        !Number.isFinite(lon2)
     ) {
         return 999;
     }
 
-
     const R = 6371;
 
-
     const dLat =
-        (lat2 - lat1)
-        *
+        (lat2 - lat1) *
         Math.PI / 180;
-
 
     const dLon =
-        (lon2 - lon1)
-        *
+        (lon2 - lon1) *
         Math.PI / 180;
 
-
     const a =
-        Math.sin(dLat / 2)
-        *
-        Math.sin(dLat / 2)
-        +
-        Math.cos(lat1 * Math.PI / 180)
-        *
-        Math.cos(lat2 * Math.PI / 180)
-        *
-        Math.sin(dLon / 2)
-        *
+        Math.sin(dLat / 2) *
+        Math.sin(dLat / 2) +
+
+        Math.cos(lat1 * Math.PI / 180) *
+        Math.cos(lat2 * Math.PI / 180) *
+
+        Math.sin(dLon / 2) *
         Math.sin(dLon / 2);
-
-
 
     return (
         R *
@@ -60,292 +58,577 @@ function distanceKm(
             Math.sqrt(1 - a)
         )
     );
-
 }
 
 
+/* =========================================================
+   NEARBY RESTAURANTS
+   ========================================================= */
 
-/*
- ให้คะแนนสถานที่
-*/
-function scoreAttraction(
-    place: any,
-    trip: TripPlanInput
+function findNearbyRestaurants(
+    place: TDMCPlace,
+    restaurants: any[],
+    limit = 3
 ) {
 
-    let score = 0;
+    const placeLat =
+        Number(
+            place.latitude ??
+            place.lat
+        );
 
+    const placeLng =
+        Number(
+            place.longitude ??
+            place.lng
+        );
 
-
-    /*
-    ประเภทเที่ยว
-    */
     if (
-        place.travel_type &&
-        trip.travelType?.length
+        !Number.isFinite(placeLat) ||
+        !Number.isFinite(placeLng)
     ) {
-
-        for (const type of trip.travelType) {
-
-            if (Array.isArray(place.travel_type)) {
-
-                if (place.travel_type.includes(type)) {
-                    score += 3;
-                }
-
-            } else if (typeof place.travel_type === "string") {
-
-                if (place.travel_type.includes(type)) {
-                    score += 3;
-                }
-
-            }
-
-        }
-
+        return [];
     }
 
+    return restaurants
 
+        .map(rest => {
 
-    /*
-    กิจกรรม
-    */
-    if (
-        place.activities &&
-        trip.activities?.length
-    ) {
+            const restLat =
+                Number(rest.latitude);
 
-        for (const act of trip.activities) {
+            const restLng =
+                Number(rest.longitude);
 
-            if (Array.isArray(place.activities)) {
+            const distance =
+                distanceKm(
+                    placeLat,
+                    placeLng,
+                    restLat,
+                    restLng
+                );
 
-                if (place.activities.includes(act))
-                    score += 2;
+            return {
+                ...rest,
+                distance
+            };
 
-            } else if (typeof place.activities === "string") {
+        })
 
-                if (place.activities.includes(act))
-                    score += 2;
+        .filter(
+            rest =>
+                Number.isFinite(rest.distance) &&
+                rest.distance < 10
+        )
 
-            }
+        .sort(
+            (a, b) =>
+                a.distance -
+                b.distance
+        )
 
-        }
-
-    }
-
-
-    /*
-    บรรยากาศ
-    */
-    if (
-        place.atmosphere &&
-        trip.atmosphere
-    ) {
-
-        if (Array.isArray(place.atmosphere)) {
-
-            if (place.atmosphere.includes(trip.atmosphere))
-                score += 2;
-
-        } else {
-
-            if (place.atmosphere.includes(trip.atmosphere))
-                score += 2;
-
-        }
-
-    }
-
-    /*
-    คู่รัก
-    */
-    if (
-        place.travel_companion &&
-        trip.companion
-    ) {
-
-        if (Array.isArray(place.travel_companion)) {
-
-            if (place.travel_companion.includes(trip.companion))
-                score += 2;
-
-        }
-
-    }
-
-    if (place.budget) {
-
-        let userBudget = "";
-
-        if (trip.budget <= 3000)
-            userBudget = "ประหยัด";
-
-        else if (trip.budget <= 10000)
-            userBudget = "ปานกลาง";
-
-        else
-            userBudget = "หรูหรา";
-
-        if (
-            Array.isArray(place.budget) &&
-            place.budget.includes(userBudget)
-        ) {
-
-            score += 2;
-
-        }
-
-    }
+        .slice(0, limit);
 }
 
-    /*
-     หา restaurant ใกล้สถานที่
-    */
-    function findNearbyRestaurants(
-        place: any,
-        restaurants: any[]
-    ) {
+
+/* =========================================================
+   TDMC RESULT → SYSTEM RESULT
+   ========================================================= */
+
+function formatRankedPlaces(
+    rankedPlaces: TDMCScoredPlace[],
+    restaurants: any[]
+) {
+
+    return rankedPlaces.map(
+        place => ({
+
+            /* =============================================
+               ATTRACTION
+               ============================================= */
+
+            attraction: {
+
+                id:
+                    place.att_id ??
+                    place.id,
+
+                name_th:
+                    place.name_th,
+
+                name_en:
+                    place.name_en,
+
+                latitude:
+                    place.latitude ??
+                    place.lat,
+
+                longitude:
+                    place.longitude ??
+                    place.lng,
 
 
-        return restaurants
-
-            .map(rest => {
-
-
-                const distance =
-                    distanceKm(
-
-                        Number(place.latitude),
-                        Number(place.longitude),
-
-                        Number(rest.latitude),
-                        Number(rest.longitude)
-
-                    );
-
-
-                return {
-
-                    ...rest,
-
-                    distance
-
-                };
-
-
-            })
-
-            .filter(
-                r => r.distance < 10
-            )
-
-            .sort(
-                (a, b) =>
-                    a.distance - b.distance
-            )
-
-            .slice(0, 3);
-
-
-    }
-
-
-
-
-
-    /*
-     Main Algorithm
-    */
-    export function rankPlaces(
-
-        attractions: any[],
-
-        restaurants: any[],
-
-        trip: TripPlanInput
-
-    ) {
-
-
-
-        /*
-        1.
-        score สถานที่
-        */
-
-
-        const scored =
-            attractions.map(place => ({
-
-
-                ...place,
-
+                /* =========================================
+                   MAIN TDMC SCORE
+                   ========================================= */
 
                 score:
-                    scoreAttraction(
-                        place,
-                        trip
-                    )
+                    place.tdmcScore,
 
 
-            }));
+                /* =========================================
+                   TDMC COMPONENT SCORES
+
+                   ใช้สำหรับ Debug / Experiment
+                   ========================================= */
+
+                tdmcScore:
+                    place.tdmcScore,
+
+                accuracyScore:
+                    place.accuracyScore,
+
+                popularityScore:
+                    place.popularityScore,
+
+                distanceScore:
+                    place.distanceScore,
 
 
+                /* =========================================
+                   NORMALIZED VALUES
+                   ========================================= */
+
+                normalizedRating:
+                    place.normalizedRating,
+
+                normalizedPopularity:
+                    place.normalizedPopularity,
+
+                normalizedDistance:
+                    place.normalizedDistance,
 
 
-        /*
-        2.
-        เรียงคะแนน
-        */
-        const topPlaces =
-            scored
-                .sort((a, b) => b.score - a.score)
-                .slice(0, 50);
-        console.table(
-            topPlaces.map(p => ({
-                name: p.name_th,
-                score: p.score,
-                travelType: p.travel_type,
-                activities: p.activities,
-                atmosphere: p.atmosphere
-            }))
-        );
+                /* =========================================
+                   TOPIC METRICS
+                   ========================================= */
+
+                topicSimilarity:
+                    place.topicSimilarity,
+
+                topicDiversity:
+                    place.topicDiversity,
 
 
-        /*
-        3.
-        เติมร้านอาหารใกล้ ๆ
-        */
+                /* =========================================
+                   DISTANCE
+                   ========================================= */
+
+                distanceKm:
+                    place.distanceKm,
 
 
-        const result =
-            topPlaces.map(place => {
+                /* =========================================
+                   OPTIONAL INFORMATION
+                   ========================================= */
+
+                category:
+                    place.category,
+
+                province:
+                    place.province,
+
+                rating:
+                    place.rating ??
+                    place.averageRating ??
+                    place.predictedRating ??
+                    place.predictedRatingByAttraction,
+
+                popularity:
+                    place.popularity ??
+                    place.visitors ??
+                    place.visitorCount,
+
+            },
 
 
-                return {
+            /* =============================================
+               NEARBY RESTAURANTS
+               ============================================= */
 
-                    attraction: place,
+            nearbyRestaurants:
+
+                findNearbyRestaurants(
+                    place,
+                    restaurants
+                )
+
+                .map(
+                    rest => ({
+
+                        id:
+                            rest.place_id,
+
+                        restaurant_name_th:
+                            rest.place_name_th,
+
+                        latitude:
+                            rest.latitude,
+
+                        longitude:
+                            rest.longitude,
+
+                        distance:
+                            rest.distance
+
+                    })
+                )
+
+        })
+    );
+}
 
 
-                    nearbyRestaurants:
-                        findNearbyRestaurants(
-                            place,
-                            restaurants
-                        )
+/* =========================================================
+   MAIN ALGORITHM
 
+   ใช้ในระบบเดิม
 
-                };
+   DEFAULT:
+   Balanced TDMC
 
+   α = 0.6
+   β = 0.2
+   γ = 0.2
+   ========================================================= */
 
-            });
-        console.log(
-            result.map(r => ({
-                attraction: r.attraction.name_th,
-                restaurants: r.nearbyRestaurants.map(x => x.restaurant_name_th)
-            }))
-        );
+export function rankPlaces(
+    attractions: any[],
+    restaurants: any[],
+    trip: TripPlanInput,
+    options?: {
 
-        return result;
+        limit?: number;
 
+        weights?: TDMCWeights;
+
+        candidateMultiplier?: number;
 
     }
+) {
+
+    console.log(
+        "\n=========================================="
+    );
+
+    console.log(
+        "🧠 TDMC ALGORITHM"
+    );
+
+    console.log(
+        "=========================================="
+    );
+
+
+    /* =============================================
+       TRIP INPUT
+       ============================================= */
+
+    console.log(
+        "📍 Province:",
+        trip.province
+    );
+
+    console.log(
+        "👥 Companion:",
+        trip.companion
+    );
+
+    console.log(
+        "💰 Budget:",
+        trip.budget
+    );
+
+    console.log(
+        "🏔️ Travel Type:",
+        trip.travelType
+    );
+
+    console.log(
+        "🎯 Activities:",
+        trip.activities
+    );
+
+    console.log(
+        "🌤️ Atmosphere:",
+        trip.atmosphere
+    );
+
+
+    /* =============================================
+       DEFAULT WEIGHTS
+
+       Balanced TDMC
+       ============================================= */
+
+    const weights =
+        normalizeWeights(
+            options?.weights ?? {
+
+                alpha: 0.2,
+
+                beta: 0.3,
+
+                gamma: 0.5
+
+            }
+        );
+
+
+    console.log(
+        "\n⚖️ TDMC WEIGHTS"
+    );
+
+    console.table({
+        alpha: weights.alpha,
+        beta: weights.beta,
+        gamma: weights.gamma
+    });
+
+
+    /* =============================================
+       RUN TDMC
+       ============================================= */
+
+    const tdmcResult: TDMCResult =
+        rankPlacesTDMC(
+
+            attractions as TDMCPlace[],
+
+            trip,
+
+            {
+
+                limit:
+                    options?.limit ?? 10,
+
+                weights,
+
+                candidateMultiplier:
+                    options?.candidateMultiplier ?? 3
+
+            }
+
+        );
+
+
+    /* =============================================
+       LOG RESULT
+       ============================================= */
+
+    console.log(
+        "\n=========================================="
+    );
+
+    console.log(
+        "📊 TDMC RESULT"
+    );
+
+    console.log(
+        "=========================================="
+    );
+
+
+    console.log(
+        "Total Attractions:",
+        attractions.length
+    );
+
+    console.log(
+        "Recommended:",
+        tdmcResult.recommendations.length
+    );
+
+    console.log(
+        "Average TDMC Score:",
+        tdmcResult.averageScore
+    );
+
+    console.log(
+        "Average Rating:",
+        tdmcResult.averageRating
+    );
+
+    console.log(
+        "Average Popularity:",
+        tdmcResult.averagePopularity
+    );
+
+    console.log(
+        "Average Distance:",
+        tdmcResult.averageDistance
+    );
+
+    console.log(
+        "Topic Diversity:",
+        tdmcResult.diversity
+    );
+
+    console.log(
+        "Runtime:",
+        `${tdmcResult.runtime.toFixed(2)} ms`
+    );
+
+
+    /* =============================================
+       TABLE FOR EXPERIMENT / DEBUG
+       ============================================= */
+
+    console.table(
+
+        tdmcResult.recommendations.map(
+            (
+                place,
+                index
+            ) => ({
+
+                rank:
+                    index + 1,
+
+                attraction:
+                    place.name_th ??
+                    place.name ??
+                    "Unknown",
+
+                tdmcScore:
+                    Number(
+                        place.tdmcScore
+                    ).toFixed(4),
+
+                accuracy:
+                    Number(
+                        place.accuracyScore
+                    ).toFixed(4),
+
+                popularity:
+                    Number(
+                        place.popularityScore
+                    ).toFixed(4),
+
+                distance:
+                    Number(
+                        place.distanceScore
+                    ).toFixed(4),
+
+                topicSimilarity:
+                    Number(
+                        place.topicSimilarity
+                    ).toFixed(4),
+
+                topicDiversity:
+                    Number(
+                        place.topicDiversity
+                    ).toFixed(4),
+
+                distanceKm:
+                    Number(
+                        place.distanceKm
+                    ).toFixed(2)
+
+            })
+        )
+
+    );
+
+
+    /* =============================================
+       RETURN FORMAT
+
+       คง Format เดิม
+       เพื่อไม่ให้ Planner พัง
+       ============================================= */
+
+    return formatRankedPlaces(
+        tdmcResult.recommendations,
+        restaurants
+    );
+}
+
+
+/* =========================================================
+   EXPERIMENT VERSION
+
+   สำหรับใช้ในการทดลอง
+   ========================================================= */
+
+export function rankPlacesWithTDMCResult(
+    attractions: any[],
+    trip: TripPlanInput,
+    options?: {
+
+        limit?: number;
+
+        weights?: TDMCWeights;
+
+        candidateMultiplier?: number;
+
+    }
+): TDMCResult {
+
+    return rankPlacesTDMC(
+
+        attractions as TDMCPlace[],
+
+        trip,
+
+        {
+
+            limit:
+                options?.limit ?? 10,
+
+            weights:
+                options?.weights,
+
+            candidateMultiplier:
+                options?.candidateMultiplier ?? 3
+
+        }
+
+    );
+}
+
+
+/* =========================================================
+   HELPER
+
+   Run TDMC ด้วย Weight ที่กำหนด
+   ========================================================= */
+
+export function rankPlacesWithWeights(
+    attractions: any[],
+    restaurants: any[],
+    trip: TripPlanInput,
+
+    alpha: number,
+
+    beta: number,
+
+    gamma: number
+) {
+
+    return rankPlaces(
+        attractions,
+        restaurants,
+        trip,
+        {
+            limit: 10,
+
+            weights: {
+                alpha,
+                beta,
+                gamma
+            }
+        }
+    );
+}
+

@@ -22,7 +22,10 @@ import { Route as Create_withAIRouteImport } from './routes/create_withAI'
 import { Route as CreateRouteImport } from './routes/create'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
+import { Route as AdminRating_attractionRouteImport } from './routes/admin/rating_attraction'
 import { Route as AdminPlaceImagesRouteImport } from './routes/admin/place-images'
+import { Route as AdminMapRouteImport } from './routes/admin/map'
+import { Route as AdminTest_AlgorithmRouteImport } from './routes/admin/Test_Algorithm'
 
 const TripsRoute = TripsRouteImport.update({
   id: '/trips',
@@ -89,9 +92,24 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRating_attractionRoute = AdminRating_attractionRouteImport.update({
+  id: '/admin/rating_attraction',
+  path: '/admin/rating_attraction',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminPlaceImagesRoute = AdminPlaceImagesRouteImport.update({
   id: '/admin/place-images',
   path: '/admin/place-images',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminMapRoute = AdminMapRouteImport.update({
+  id: '/admin/map',
+  path: '/admin/map',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminTest_AlgorithmRoute = AdminTest_AlgorithmRouteImport.update({
+  id: '/admin/Test_Algorithm',
+  path: '/admin/Test_Algorithm',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -108,7 +126,10 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/saved': typeof SavedRoute
   '/trips': typeof TripsRoute
+  '/admin/Test_Algorithm': typeof AdminTest_AlgorithmRoute
+  '/admin/map': typeof AdminMapRoute
   '/admin/place-images': typeof AdminPlaceImagesRoute
+  '/admin/rating_attraction': typeof AdminRating_attractionRoute
   '/auth/callback': typeof AuthCallbackRoute
 }
 export interface FileRoutesByTo {
@@ -124,7 +145,10 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/saved': typeof SavedRoute
   '/trips': typeof TripsRoute
+  '/admin/Test_Algorithm': typeof AdminTest_AlgorithmRoute
+  '/admin/map': typeof AdminMapRoute
   '/admin/place-images': typeof AdminPlaceImagesRoute
+  '/admin/rating_attraction': typeof AdminRating_attractionRoute
   '/auth/callback': typeof AuthCallbackRoute
 }
 export interface FileRoutesById {
@@ -141,7 +165,10 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/saved': typeof SavedRoute
   '/trips': typeof TripsRoute
+  '/admin/Test_Algorithm': typeof AdminTest_AlgorithmRoute
+  '/admin/map': typeof AdminMapRoute
   '/admin/place-images': typeof AdminPlaceImagesRoute
+  '/admin/rating_attraction': typeof AdminRating_attractionRoute
   '/auth/callback': typeof AuthCallbackRoute
 }
 export interface FileRouteTypes {
@@ -159,7 +186,10 @@ export interface FileRouteTypes {
     | '/register'
     | '/saved'
     | '/trips'
+    | '/admin/Test_Algorithm'
+    | '/admin/map'
     | '/admin/place-images'
+    | '/admin/rating_attraction'
     | '/auth/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -175,7 +205,10 @@ export interface FileRouteTypes {
     | '/register'
     | '/saved'
     | '/trips'
+    | '/admin/Test_Algorithm'
+    | '/admin/map'
     | '/admin/place-images'
+    | '/admin/rating_attraction'
     | '/auth/callback'
   id:
     | '__root__'
@@ -191,7 +224,10 @@ export interface FileRouteTypes {
     | '/register'
     | '/saved'
     | '/trips'
+    | '/admin/Test_Algorithm'
+    | '/admin/map'
     | '/admin/place-images'
+    | '/admin/rating_attraction'
     | '/auth/callback'
   fileRoutesById: FileRoutesById
 }
@@ -208,7 +244,10 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   SavedRoute: typeof SavedRoute
   TripsRoute: typeof TripsRoute
+  AdminTest_AlgorithmRoute: typeof AdminTest_AlgorithmRoute
+  AdminMapRoute: typeof AdminMapRoute
   AdminPlaceImagesRoute: typeof AdminPlaceImagesRoute
+  AdminRating_attractionRoute: typeof AdminRating_attractionRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
 }
 
@@ -305,11 +344,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/rating_attraction': {
+      id: '/admin/rating_attraction'
+      path: '/admin/rating_attraction'
+      fullPath: '/admin/rating_attraction'
+      preLoaderRoute: typeof AdminRating_attractionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/place-images': {
       id: '/admin/place-images'
       path: '/admin/place-images'
       fullPath: '/admin/place-images'
       preLoaderRoute: typeof AdminPlaceImagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/map': {
+      id: '/admin/map'
+      path: '/admin/map'
+      fullPath: '/admin/map'
+      preLoaderRoute: typeof AdminMapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/Test_Algorithm': {
+      id: '/admin/Test_Algorithm'
+      path: '/admin/Test_Algorithm'
+      fullPath: '/admin/Test_Algorithm'
+      preLoaderRoute: typeof AdminTest_AlgorithmRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -328,7 +388,10 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   SavedRoute: SavedRoute,
   TripsRoute: TripsRoute,
+  AdminTest_AlgorithmRoute: AdminTest_AlgorithmRoute,
+  AdminMapRoute: AdminMapRoute,
   AdminPlaceImagesRoute: AdminPlaceImagesRoute,
+  AdminRating_attractionRoute: AdminRating_attractionRoute,
   AuthCallbackRoute: AuthCallbackRoute,
 }
 export const routeTree = rootRouteImport

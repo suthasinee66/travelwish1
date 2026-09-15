@@ -52,6 +52,7 @@ import { createPlanner } from "@/lib/ai/planner";
 import { chatWithAI, resetTrip } from "@/lib/ai/chat";
 import { Bot, Copy, ThumbsUp, ThumbsDown } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { loadRecommendationCache } from "@/lib/recommend/loadRecommendationCache";
 import remarkGfm from "remark-gfm";
 import {
   APIProvider,
@@ -77,6 +78,10 @@ import {
 
 import { CSS } from "@dnd-kit/utilities";
 import googleMapIcon from "../assets/google-map.png";
+import geminiIcon from "../assets/ai/gemini.png";
+import gptIcon from "../assets/ai/gpt.png";
+import claudeIcon from "../assets/ai/claude.png";
+
 
 
 
@@ -122,6 +127,7 @@ function WherePicker({
   setActiveStep,
   showProvinceDropdown,
   setShowProvinceDropdown,
+  onComplete,
 }: {
   tripInput: any;
   setTripInput: any;
@@ -129,6 +135,7 @@ function WherePicker({
   setActiveStep: any;
   showProvinceDropdown: boolean;
   setShowProvinceDropdown: React.Dispatch<React.SetStateAction<boolean>>;
+  onComplete: () => void;
 }) {
   console.log(tripInput.province);
   console.log(filteredProvinces);
@@ -205,7 +212,6 @@ mt-5
 
       <button
 
-        disabled={!tripInput.province}
 
         onClick={() => {
 
@@ -271,7 +277,6 @@ function DaysPicker({
       />
 
       <button
-        disabled={!tripInput.days}
         onClick={() => setActiveStep("who")}
         className={`mt-8 ml-auto block px-8 py-3 rounded-full font-semibold ${tripInput.days
           ? "bg-black text-white"
@@ -339,10 +344,12 @@ function BudgetPicker({
   tripInput,
   setTripInput,
   setTripModal,
+  onComplete,
 }: {
   tripInput: any;
   setTripInput: any;
   setTripModal: any;
+  onComplete: () => void;
 }) {
 
   return (
@@ -369,11 +376,11 @@ function BudgetPicker({
 
       <button
 
-        disabled={!tripInput.budget}
 
         onClick={() => {
 
           setTripModal(false);
+          onComplete();
 
         }}
 
@@ -592,13 +599,17 @@ const path =
   return null;
 
 }
-
 function SortablePlaceItem({
   item,
   index,
   findPlace,
   findRestaurant,
 }: any) {
+
+  const sortableId =
+    item.type === "restaurant"
+      ? `restaurant-${item.restaurant_id}`
+      : `place-${item.place_id}`;
 
   const {
     attributes,
@@ -607,97 +618,91 @@ function SortablePlaceItem({
     transform,
     transition,
   } = useSortable({
-    id:
-      item.restaurant_id ??
-      item.place_id
+    id: sortableId
   });
-
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
   };
 
-
   return (
-
     <div
-  ref={setNodeRef}
-  style={style}
-  {...attributes}
-  {...listeners}
-  className="
-    flex
-    items-center
-    gap-3
-    border
-    rounded-2xl
-    p-3
-    bg-white
-    shadow-sm
-    cursor-grab
-  "
->
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="
+        flex
+        items-center
+        gap-3
+        border
+        rounded-2xl
+        p-3
+        bg-white
+        shadow-sm
+        cursor-grab
+      "
+    >
 
-  {/* ลำดับ */}
-  <div
-    className="
-      w-8
-      h-8
-      rounded-full
-      bg-black
-      text-white
-      flex
-      items-center
-      justify-center
-      font-bold
-      shrink-0
-    "
-  >
-    {index + 1}
-  </div>
-{/* รูป */}
-{item.images?.[0] ? (
-  <img
-    src={item.images[0]}
-    alt={item.name}
-    className="
-      w-14
-      h-14
-      rounded-xl
-      object-cover
-      shrink-0
-    "
-  />
-) : (
-  <div
-    className="
-      w-14
-      h-14
-      rounded-xl
-      bg-gray-200
-      shrink-0
-    "
-  />
-)}
+      {/* ลำดับ */}
+      <div
+        className="
+          w-8
+          h-8
+          rounded-full
+          bg-black
+          text-white
+          flex
+          items-center
+          justify-center
+          font-bold
+          shrink-0
+        "
+      >
+        {index + 1}
+      </div>
 
-  {/* ชื่อ */}
-  <div className="flex-1">
+      {/* รูป */}
+      {item.images?.[0] ? (
+        <img
+          src={item.images[0]}
+          alt={item.name}
+          className="
+            w-14
+            h-14
+            rounded-xl
+            object-cover
+            shrink-0
+          "
+        />
+      ) : (
+        <div
+          className="
+            w-14
+            h-14
+            rounded-xl
+            bg-gray-200
+            shrink-0
+          "
+        />
+      )}
 
-    <div className="font-semibold text-sm">
-      {item.name}
+      {/* ชื่อ */}
+      <div className="flex-1">
+
+        <div className="font-semibold text-sm">
+          {item.name}
+        </div>
+
+        <div className="text-xs text-gray-400">
+          {item.period}
+        </div>
+
+      </div>
+
     </div>
-
-    <div className="text-xs text-gray-400">
-      {item.period}
-    </div>
-
-  </div>
-
-</div>
-
   );
-
 }
 
 function TripPlanPanel({
@@ -811,86 +816,141 @@ console.log("FIRST HOTEL:", data?.[0]);
     };
 
   };
+const openGoogleMaps = (items: any[]) => {
+  const locations: string[] = [];
 
-const openGoogleMaps = (items:any[]) => {
+  items.forEach((item) => {
 
-  const locations = items
-    .map(item => {
+    // =========================
+    // 1. สถานที่ท่องเที่ยว
+    // =========================
+    if (item.place_id) {
+      const place = findPlace(item.place_id);
 
-      let place;
+      console.log("📍 PLACE:", {
+        id: item.place_id,
+        name: item.place_name,
+        found: place,
+      });
 
-      if(item.restaurant_id){
-        place = findRestaurant(item.restaurant_id);
-      }else{
-        place = findPlace(item.place_id);
+      if (
+        place &&
+        place.latitude != null &&
+        place.longitude != null
+      ) {
+        locations.push(
+          `${place.latitude},${place.longitude}`
+        );
+      } else {
+        console.warn(
+          "❌ ไม่พบพิกัดสถานที่:",
+          item.place_name,
+          item.place_id
+        );
       }
+    }
 
-      if(
-        place?.latitude &&
-        place?.longitude
-      ){
-        return `${place.latitude},${place.longitude}`;
+    // =========================
+    // 2. ร้านอาหาร
+    // =========================
+    if (item.restaurant_id) {
+      const restaurant = findRestaurant(
+        item.restaurant_id
+      );
+
+      console.log("🍜 RESTAURANT:", {
+        id: item.restaurant_id,
+        name: item.restaurant_name,
+        found: restaurant,
+      });
+
+      if (
+        restaurant &&
+        restaurant.latitude != null &&
+        restaurant.longitude != null
+      ) {
+        locations.push(
+          `${restaurant.latitude},${restaurant.longitude}`
+        );
+      } else {
+        console.warn(
+          "❌ ไม่พบพิกัดร้าน:",
+          item.restaurant_name,
+          item.restaurant_id
+        );
       }
+    }
+  });
 
-      return null;
+  console.log(
+    "🗺️ GOOGLE MAP LOCATIONS:",
+    locations
+  );
 
-    })
-    .filter(Boolean);
-
-
-  if(locations.length === 0) return;
-
+  if (locations.length === 0) {
+    console.warn("❌ ไม่มีสถานที่ที่มีพิกัด");
+    return;
+  }
 
   const url =
     `https://www.google.com/maps/dir/${locations.join("/")}`;
 
+  console.log("🌎 GOOGLE MAP URL:", url);
 
-  window.open(url, "_blank");
-
+  window.open(
+    url,
+    "_blank",
+    "noopener,noreferrer"
+  );
 };
+const handleDragEnd = (event: any) => {
 
-const handleDragEnd = (event:any)=>{
+  const { active, over } = event;
 
- const {
-   active,
-   over
- } = event;
+  if (!over) return;
 
+  if (active.id === over.id) return;
 
- if(!over) return;
+  setRoutePlaces((items) => {
 
+    const getSortableId = (item: any) => {
 
- if(active.id === over.id)
-   return;
+      if (item.type === "restaurant") {
+        return `restaurant-${item.restaurant_id}`;
+      }
 
+      return `place-${item.place_id}`;
+    };
 
+    const oldIndex = items.findIndex(
+      item =>
+        getSortableId(item) === String(active.id)
+    );
 
- setRoutePlaces((items)=>{
+    const newIndex = items.findIndex(
+      item =>
+        getSortableId(item) === String(over.id)
+    );
 
-   const oldIndex =
-     items.findIndex(
-       x =>
-       (x.restaurant_id ?? x.place_id)
-       === active.id
-     );
+    console.log("🔄 DRAG:", {
+      active: active.id,
+      over: over.id,
+      oldIndex,
+      newIndex
+    });
 
+    if (oldIndex === -1 || newIndex === -1) {
+      console.warn("❌ Drag item not found");
+      return items;
+    }
 
-   const newIndex =
-     items.findIndex(
-       x =>
-       (x.restaurant_id ?? x.place_id)
-       === over.id
-     );
+    return arrayMove(
+      items,
+      oldIndex,
+      newIndex
+    );
 
-
-   return arrayMove(
-     items,
-     oldIndex,
-     newIndex
-   );
-
- });
-
+  });
 
 };
 
@@ -922,72 +982,45 @@ console.log(
     restaurant_id:x.restaurant_id
   }))
 );
+const days = useMemo(() => {
 
-const markdownDays =
-  plan
-    ?.match(/(?:#{1,3}\s*)?(?:✨\s*)?Day\s*\d+.*?(?=\n(?:#{1,3}\s*)?(?:✨\s*)?Day\s*\d+|$)/gis)
-    ?.map((section:string,index:number)=>{
-
-      const lines = section
-        .split("\n")
-        .map(x=>x.trim())
-        .filter(Boolean);
-
-
-      return {
-        day:index+1,
-        title:
-          lines[0]
-          .replace(/[#✨]/g,"")
-          .replace(/Day\s*\d+[:：-]?/i,"")
-          .trim()
-      };
-
-    }) || [];
-
-const days = useMemo(()=>{
-
-return Array.from(
-  new Set(
-    plannerItems.map(x => Number(x.day))
-  )
-).map(day => {
-
-
-  const items = plannerItems
-    .filter(
-      x => Number(x.day) === Number(day)
+  return Array.from(
+    new Set(
+      plannerItems.map(x => Number(x.day))
     )
-    .filter(
-      (item,index,array)=>
-        array.findIndex(
-          x =>
-          (x.restaurant_id ?? x.place_id)
-          ===
-          (item.restaurant_id ?? item.place_id)
-        ) === index
-    )
-    .map(item=>({
-      ...item,
-      type:item.restaurant_id
-        ? "restaurant"
-        : "place"
-    }));
+  ).map(day => {
 
+    const items = plannerItems
+      .filter(
+        x => Number(x.day) === day
+      )
+      .filter(
+        (item, index, array) =>
+          array.findIndex(
+            x =>
+              x.place_id === item.place_id &&
+              x.restaurant_id === item.restaurant_id
+          ) === index
+      )
+      .map(item => ({
+        ...item,
+        type: "plan"
+      }));
 
-  return {
-    day,
-    title: markdownDays[day-1]?.title || "",
-    items
-  };
+    const title =
+      plannerItems.find(
+        x => Number(x.day) === day
+      )?.title ?? "";
 
+    return {
+      day,
+      title,
+      items
+    };
 
-});
+  });
 
-},[
- plannerItems,
- markdownDays
-]);
+}, [plannerItems]);
 
   const findPlace = (placeId: string) => {
 
@@ -1041,47 +1074,36 @@ console.log(
   "ALL DAYS",
   days
 );
-const mapPlaces = useMemo(()=>{
+const mapPlaces = useMemo(() => {
 
-  const result:any[] = [];
+  const result: any[] = [];
 
+  days[selectedDay]?.items.forEach((item) => {
 
-  days[selectedDay]?.items.forEach((item)=>{
+    // =========================
+    // PLACE
+    // =========================
 
+    if (item.place_id) {
 
-    // =====================
-    // เพิ่มสถานที่
-    // =====================
+      const place = findPlace(item.place_id);
 
-    const place = findPlace(
-      item.place_id
-    );
-
-
-    if(place){
-
-      const exist =
-        result.find(
-          x =>
-            x.type === "place" &&
-            x.place_id === item.place_id
-        );
-
-
-      if(!exist){
+      if (place) {
 
         result.push({
-
           ...item,
 
-          type:"place",
+          type: "place",
 
-          location:place,
+          location: place,
 
-          name:place.name_th,
+          name:
+            place.name_th ??
+            place.name_en ??
+            item.place_name ??
+            "สถานที่",
 
           images: place.images,
-
         });
 
       }
@@ -1089,50 +1111,46 @@ const mapPlaces = useMemo(()=>{
     }
 
 
+    // =========================
+    // RESTAURANT
+    // =========================
 
-    // =====================
-    // เพิ่มร้านอาหาร
-    // =====================
-if (item.restaurant_id) {
-  const restaurant = findRestaurant(item.restaurant_id);
+    if (item.restaurant_id) {
 
-  if (restaurant) {
-    result.push({
-      ...item,
-      type: "restaurant",
-      location: restaurant,
-      name:
-        restaurant.place_name_th ??
-        restaurant.place_name_en ??
-        "ร้านอาหาร",
+      const restaurant =
+        findRestaurant(item.restaurant_id);
 
-       images: restaurant.images, 
-    });
-  }
-}
+      if (restaurant) {
 
+        result.push({
+          ...item,
+
+          type: "restaurant",
+
+          location: restaurant,
+
+          name:
+            restaurant.place_name_th ??
+            restaurant.place_name_en ??
+            item.restaurant_name ??
+            "ร้านอาหาร",
+
+          images: restaurant.images,
+        });
+
+      }
+
+    }
 
   });
 
+  return result.filter(
+    x =>
+      x.location?.latitude != null &&
+      x.location?.longitude != null
+  );
 
-return result
-.filter(
-  x =>
-    x.location?.latitude &&
-    x.location?.longitude
-)
-.filter(
-  (item,index,array)=>
-    array.findIndex(
-      x =>
-        x.type === item.type &&
-        x.place_id === item.place_id &&
-        x.restaurant_id === item.restaurant_id
-    ) === index
-);
-
-
-},[
+}, [
   days,
   selectedDay,
   allPlaces,
@@ -1143,13 +1161,9 @@ useEffect(() => {
   console.log("CHANGE DAY RESET");
   console.log("NEW MAP PLACES", mapPlaces);
 
-  setRoutePlaces(
-    [...mapPlaces]
-  );
+  setRoutePlaces([...mapPlaces]);
 
-}, [
-  selectedDay
-]);
+}, [selectedDay, mapPlaces]);
 
 console.log(
   "FINAL MAP PLACES",
@@ -1519,29 +1533,27 @@ justify-center
  collisionDetection={closestCenter}
  onDragEnd={handleDragEnd}
 >
-
-
+  
 <SortableContext
-
-items={
- routePlaces.map(
- item =>
- item.restaurant_id ??
- item.place_id
- )
-}
-
-strategy={
- verticalListSortingStrategy
-}
-
+  items={routePlaces.map((item) =>
+    item.type === "restaurant"
+      ? `restaurant-${item.restaurant_id}`
+      : `place-${item.place_id}`
+  )}
+  strategy={verticalListSortingStrategy}
 >
 
 {
 routePlaces.map((item, index) => (
 
   <Fragment
-key={`${selectedDay}-${item.type}-${item.restaurant_id ?? item.place_id}`}
+key={
+  `${selectedDay}-${
+    item.type === "restaurant"
+      ? `restaurant-${item.restaurant_id}`
+      : `place-${item.place_id}`
+  }`
+}
 >
 
     <SortablePlaceItem
@@ -1696,6 +1708,8 @@ function Home() {
   const [inspire, setInspire] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
+  const [selectedModel, setSelectedModel] = useState<"gemini" | "gpt" | "claude">("gemini");
+  const [showModelMenu, setShowModelMenu] = useState(false);
   const [plan, setPlan] = useState<any>(null);
   const [hasChatStarted, setHasChatStarted] = useState(false);
   const [tripPlaces, setTripPlaces] = useState<any[]>([]);
@@ -1822,6 +1836,27 @@ useEffect(() => {
   loadUserTripPreference();
 
 }, [user]);
+const aiModels = [
+  {
+    id: "gemini" as const,
+    name: "Gemini",
+    icon: geminiIcon,
+    description: "Google AI",
+  },
+  {
+    id: "gpt" as const,
+    name: "GPT",
+    icon: gptIcon,
+    description: "OpenAI",
+  },
+  {
+    id: "claude" as const,
+    name: "Claude",
+    icon: claudeIcon,
+    description: "Anthropic",
+  },
+];
+
   const loadChatMessages = async (chatId: string) => {
 
     console.log("LOAD CHAT:", chatId);
@@ -1853,9 +1888,22 @@ console.log(data?.[0]?.planner_json);
     setCurrentChatId(chatId);
     const { data: session } = await supabase
   .from("chat_sessions")
-  .select("trip_preferences")
+  .select("trip_preferences, ai_model")
   .eq("id", chatId)
   .single();
+
+if (session?.trip_preferences) {
+  setTripInput(session.trip_preferences);
+}
+
+// โหลด AI model ของ chat นี้
+if (
+  session?.ai_model === "gemini" ||
+  session?.ai_model === "gpt" ||
+  session?.ai_model === "claude"
+) {
+  setSelectedModel(session.ai_model);
+}
 
 if (session?.trip_preferences) {
   setTripInput(session.trip_preferences);
@@ -1867,65 +1915,44 @@ const formatted = data.map((m) => ({
 }));
 
 setMessages(formatted);
-
-
+// ===============================
 // โหลด planner_json
-const planner = data
-  .filter(m => m.role === "ai")
-  .find(m => m.planner_json);
+// ===============================
 
+const planner = data
+  .filter((m) => m.role === "ai")
+  .find((m) => m.planner_json != null);
+
+console.log("🔎 PLANNER MESSAGE:", planner);
 
 if (planner?.planner_json) {
 
   const json =
     typeof planner.planner_json === "string"
-        ? JSON.parse(planner.planner_json)
-        : planner.planner_json;
+      ? JSON.parse(planner.planner_json)
+      : planner.planner_json;
 
-console.log(json);
-console.log(Array.isArray(json));
+  console.log("🗺️ LOADED PLANNER:", json);
+  console.log("IS ARRAY:", Array.isArray(json));
+  console.log("LENGTH:", Array.isArray(json) ? json.length : 0);
 
-setPlannerJson(json);
+  setPlannerJson(json);
 
-  setShowTripPlan(true);
+  // มี planner_json = แสดง TripPlanPanel
+  if (Array.isArray(json) && json.length > 0) {
+    setShowTripPlan(true);
+  } else {
+    setShowTripPlan(false);
+  }
 
-}
-else {
+} else {
+
+  console.log("❌ NO PLANNER JSON");
 
   setPlannerJson([]);
+  setPlan(null);
   setShowTripPlan(false);
-
 }
-
-
-    // =====================
-    // หา planner เก่า
-    // =====================
-
-    const oldPlan = data
-      .filter(
-        m => m.role === "ai"
-      )
-      .find(
-        m =>
-          m.content.includes("# ✨ Day")
-      );
-
-
-    if (oldPlan) {
-
-      setPlan(oldPlan.content);
-
-      setShowTripPlan(true);
-
-    }
-    else {
-
-      setPlan(null);
-
-      setShowTripPlan(false);
-
-    }
 
 
     setHasChatStarted(true);
@@ -2209,38 +2236,8 @@ ${active
 
   };
   const checkTripInput = () => {
-
-    if (!tripInput.province) {
-      setActiveStep("where");
-      setTripModal(true);
-      return false;
-    }
-
-
-    if (!tripInput.days) {
-      setActiveStep("days");
-      setTripModal(true);
-      return false;
-    }
-
-
-    if (!tripInput.companion) {
-      setActiveStep("who");
-      setTripModal(true);
-      return false;
-    }
-
-
-    if (!tripInput.budget) {
-      setActiveStep("budget");
-      setTripModal(true);
-      return false;
-    }
-
-
-    return true;
-
-  };
+  return true;
+};
 
   const handleNewChat = () => {
   setMessages([]);
@@ -2277,103 +2274,192 @@ ${active
   });
 };
 
-  const handleSend = async () => {
+const ensureChatSession = async (): Promise<string | null> => {
+  // มี session อยู่แล้ว
+  if (currentChatId) {
+    return currentChatId;
+  }
 
-    if (!input.trim()) return;
-    let chatId = currentChatId;
+  if (!user?.id) {
+    console.error("❌ ไม่มี user.id");
+    return null;
+  }
 
+  const title = [
+  tripInput.province && tripInput.province,
+  tripInput.days && `${tripInput.days} วัน`,
+  tripInput.companion && `กับ${tripInput.companion}`,
+  tripInput.budget && `งบ ${tripInput.budget.toLocaleString()} บาท`,
+]
+  .filter(Boolean)
+  .join(" ");
 
+  console.log("🔥 CREATE CHAT SESSION");
+  console.log({
+    user_id: user.id,
+    title,
+    trip_preferences: tripInput,
+    ai_model: selectedModel,
+  });
 
-    setHasChatStarted(true);
+  const { data, error } = await supabase
+    .from("chat_sessions")
+    .insert({
+      user_id: user.id,
+      title,
+      trip_preferences: tripInput,
+      ai_model: selectedModel,
+    })
+    .select()
+    .single();
 
+  if (error) {
+    console.error("❌ CREATE CHAT SESSION ERROR:", error);
+    return null;
+  }
 
+  console.log("✅ CHAT SESSION CREATED:", data);
 
-    // ถ้ากำลังรอ confirm
-    if (waitingPlanConfirm) {
+  setCurrentChatId(data.id);
 
-      const userMessage = {
+  setChatSessions(prev => [
+    data,
+    ...prev,
+  ]);
+
+  return data.id;
+};
+const handleTripComplete = async () => {
+  const chatId = await ensureChatSession();
+
+  if (!chatId) {
+    setMessages(prev => [
+      ...prev,
+      {
+        role: "ai",
+        text: "ไม่สามารถสร้างแชตได้ กรุณาลองใหม่อีกครั้ง"
+      }
+    ]);
+
+    return;
+  }
+
+  setMessages(prev => [
+    ...prev,
+    {
+      role: "ai",
+      text: "ได้เลยครับ ✨ ต้องการให้ผมจัดแพลนจากข้อมูลที่มีตอนนี้เลยไหม?"
+    }
+  ]);
+
+  setWaitingPlanConfirm(true);
+};
+const handleSend = async () => {
+  if (!input.trim()) return;
+
+  const text = input.trim();
+  setInput("");
+
+  // =====================================
+  // 1. ถ้าผู้ใช้พิมพ์ว่าต้องการสร้างทริป
+  // =====================================
+
+  const wantsTrip =
+    text.includes("จัดทริป") ||
+    text.includes("จัดแพลน") ||
+    text.includes("วางแผนเที่ยว") ||
+    text.includes("สร้างทริป");
+
+  if (wantsTrip) {
+    setActiveStep("where");
+    setTripModal(true);
+    return;
+  }
+
+  // =====================================
+  // 2. สร้าง chat session แม้ข้อมูลยังไม่ครบ
+  // =====================================
+
+  let chatId = currentChatId;
+
+  if (!chatId) {
+    chatId = await ensureChatSession();
+
+    if (!chatId) {
+      setMessages(prev => [
+        ...prev,
+        {
+          role: "ai",
+          text: "ไม่สามารถสร้างแชตได้ กรุณาลองใหม่อีกครั้ง"
+        }
+      ]);
+
+      return;
+    }
+  }
+
+  setHasChatStarted(true);
+
+  // =====================================
+  // 3. ถ้ากำลังรอคำตอบว่าจะจัดทริปไหม
+  // =====================================
+
+  if (waitingPlanConfirm) {
+
+    setMessages(prev => [
+      ...prev,
+      {
         role: "user",
-        text: input
-      };
+        text
+      }
+    ]);
 
+    await supabase
+      .from("chat_messages")
+      .insert({
+        session_id: chatId,
+        user_id: user.id,
+        role: "user",
+        content: text
+      });
+
+    // ===============================
+    // ตอบตกลง
+    // ===============================
+
+    const wantsPlan =
+      text.includes("ใช่") ||
+      text.includes("จัดเลย") ||
+      text.includes("ตกลง") ||
+      text.includes("เอาเลย") ||
+      text.includes("ต้องการ") ||
+      text.includes("ครับ");
+
+    if (wantsPlan) {
+
+      setWaitingPlanConfirm(false);
 
       setMessages(prev => [
         ...prev,
-        userMessage
+        {
+          role: "ai",
+          text: "⏳ กำลังสร้างแผนเที่ยว..."
+        }
       ]);
-      const { data: userMsg, error: userMsgError } = await supabase
-        .from("chat_messages")
-        .insert({
-          session_id: chatId,
-          user_id: user.id,
-          role: "user",
-          content: input
-        })
-        .select()
-        .single();
 
+      try {
 
-      if (userMsgError) {
-
-        console.error(
-          "❌ บันทึก user message ไม่สำเร็จ:",
-          userMsgError
+        const result = await createPlanner(
+          tripInput,
+          chatId,
+          user.id,
+          selectedModel
         );
 
-      }
+        setPlan(result.markdown);
+        setPlannerJson(result.planner_json);
+        setShowTripPlan(true);
 
-
-      if (userMsg) {
-
-        console.log(
-          "✅ บันทึก user message แล้ว:",
-          userMsg
-        );
-
-      }
-
-
-      if (userMsgError) {
-
-        console.error(
-          "❌ บันทึก user message ไม่สำเร็จ:",
-          userMsgError
-        );
-
-      }
-
-      setInput("");
-
-      if (
-        input.includes("ใช่") ||
-        input.includes("ครับ") ||
-        input.includes("จัดเลย") ||
-        input.includes("ตกลง")
-      ) {
-
-        setWaitingPlanConfirm(false);
-
-        setMessages(prev => [
-          ...prev,
-          {
-            role: "ai",
-            text: "⏳ กำลังสร้างแผนเที่ยว..."
-          }
-        ]);
-        try {
-  const result = await createPlanner(
-    tripInput,
-    chatId!,
-    user.id
-  );
-
-  console.log("RESULT =", result);
-console.log("PLANNER JSON =", result.planner_json);
-
-  setPlan(result.markdown);
-  setPlannerJson(result.planner_json);
-  setShowTripPlan(true);
-  
         setExploreOpen(false);
 
         setMessages(prev => [
@@ -2384,138 +2470,95 @@ console.log("PLANNER JSON =", result.planner_json);
           }
         ]);
 
-        return;
+      } catch (err) {
 
-} catch (err) {
-  console.error(err);
+        console.error(err);
 
-  setMessages(prev => [
-    ...prev.slice(0, -1),
-    {
-      role: "ai",
-      text: "ขออภัย ขณะนี้ AI มีผู้ใช้งานจำนวนมาก กรุณาลองใหม่อีกครั้ง"
-    }
-  ]);
-
-  return;
-}
+        setMessages(prev => [
+          ...prev.slice(0, -1),
+          {
+            role: "ai",
+            text:
+              "ขออภัย ขณะนี้ AI มีผู้ใช้งานจำนวนมาก กรุณาลองใหม่อีกครั้ง"
+          }
+        ]);
 
       }
+
+      return;
     }
 
+    // ===============================
+    // ถ้าตอบว่าไม่
+    // ===============================
 
-    // เช็คข้อมูลก่อน
-    if (!checkTripInput()) {
+    const doesNotWantPlan =
+      text.includes("ไม่") ||
+      text.includes("ยังไม่") ||
+      text.includes("ไม่ต้อง");
 
+    if (doesNotWantPlan) {
+
+      setWaitingPlanConfirm(false);
 
       setMessages(prev => [
         ...prev,
         {
           role: "ai",
-          text: "ขอข้อมูลทริปเพิ่มก่อนนะครับ 😊"
+          text: "ได้เลยครับ 😊 ถ้าต้องการวางแผนเที่ยวเมื่อไหร่ บอกผมได้เลย"
         }
       ]);
 
-
       return;
-
-    }
-    
-    if (!chatId) {
-
-      const title = `${tripInput.province} ${tripInput.days} วัน กับ${tripInput.companion} งบ ${tripInput.budget?.toLocaleString()} บาท`;
-
-const { data, error } = await supabase
-  .from("chat_sessions")
-  .insert({
-    user_id: user.id,
-    title,
-    trip_preferences: tripInput,
-  })
-  .select()
-  .single();
-
-
-      if (data) {
-
-        chatId = data.id;
-
-        setCurrentChatId(data.id);
-        setChatSessions((prev) => [data, ...prev]);
-
-      }
-
     }
 
-
-
-    // มีข้อมูลครบแล้ว
-    setMessages(prev => [
-      ...prev,
-      {
-        role: "user",
-        text: input
-      }
-    ]);
-
-
-
-    setInput("");
-
-
-    const aiText =
-      "ข้อมูลครบแล้วครับ ✨ ต้องการให้จัดแพลนเลยไหม?";
-
-
+    // ถ้าไม่ใช่คำตอบ Yes/No
     setMessages(prev => [
       ...prev,
       {
         role: "ai",
-        text: aiText
+        text:
+          "ต้องการให้ผมจัดแพลนจากข้อมูลที่มีตอนนี้เลยไหมครับ?"
       }
     ]);
 
-    const { data: aiMsg, error: aiError } = await supabase
-      .from("chat_messages")
-      .insert({
-        session_id: chatId,
-        user_id: user.id,
+    return;
+  }
 
-        role: "ai",
+  // =====================================
+  // 4. ข้อความปกติ
+  // =====================================
 
-        content: aiText
-
-      })
-      .select()
-      .single();
-
-
-
-    if (aiMsg) {
-
-      console.log(
-        "✅ บันทึก AI message แล้ว:",
-        aiMsg
-      );
-
+  setMessages(prev => [
+    ...prev,
+    {
+      role: "user",
+      text
     }
+  ]);
 
+  const aiText =
+    "ได้เลยครับ ✨ ต้องการให้ผมจัดแพลนจากข้อมูลที่มีตอนนี้เลยไหม?";
 
-    if (aiError) {
-
-      console.error(
-        "❌ บันทึก AI message ไม่สำเร็จ:",
-        aiError
-      );
-
+  setMessages(prev => [
+    ...prev,
+    {
+      role: "ai",
+      text: aiText
     }
+  ]);
 
+  await supabase
+    .from("chat_messages")
+    .insert({
+      session_id: chatId,
+      user_id: user.id,
+      role: "ai",
+      content: aiText
+    });
 
-
-    setWaitingPlanConfirm(true);
-
-
-  };
+  setWaitingPlanConfirm(true);
+};
 
 
   const handleSave = async (place: any) => {
@@ -2663,149 +2706,179 @@ const { data, error } = await supabase
 
   }, []);
   useEffect(() => {
+  let cancelled = false;
 
+  async function init() {
+    try {
+      console.log("🚀 HOME INIT");
 
-    async function init() {
+      // ==========================================
+      // 1. ถ้ามีข้อมูลใน Zustand อยู่แล้ว → แสดงทันที
+      // ==========================================
 
-
-      try {
-
-
-        if (
-          allPlaces.length > 0 &&
-          recommend.length > 0 &&
-          explorePlaces.length > 0
-        ) {
-
-          console.log("ใช้ข้อมูลจาก store");
-
-          setRecommendLoading(false);
-
-          return;
-
-        }
-
-
-
-        console.log("โหลดข้อมูลใหม่");
-
-
-        const data = await loadTravelData();
-
-
-        if (!data) return;
-
-
-
-        setUser(data.user);
-
-        setPreferences(data.preferences);
-        setAllPlaces(data.allPlaces);
-
-
-        // โหลดร้านอาหาร
-        const restaurantsData =
-  await loadAllRestaurants();
-
-console.log(
-  "🍜 RESTAURANT TOTAL",
-  restaurantsData.length
-);
-
-console.log(
-  "🍜 RESTAURANT SAMPLE",
-  restaurantsData.slice(0,10)
-);
-
-setRestaurants(restaurantsData);
-        // เก็บ location ตรงนี้
-        try {
-
-          const location = await getUserLocation();
-
-
-          await supabase
-            .from("user_locations")
-            .upsert(
-              {
-                user_id: data.user.id,
-
-                latitude: location.latitude,
-
-                longitude: location.longitude,
-
-                updated_at: new Date()
-
-              },
-              {
-                onConflict: "user_id"
-              }
-            );
-
-
-          console.log(
-            "saved location",
-            location
-          );
-
-
-        }
-        catch (err) {
-
-          console.log(
-            "location permission denied",
-            err
-          );
-
-        }
-
-
-
-        const recommendData =
-          await getRecommendations(
-            data.preferences
-          );
-
-
-
-        setRecommend(
-          recommendData.slice(0, 6)
-        );
-
-
-        setExplorePlaces(
-          recommendData
-        );
-
-
-        setAllRecommend(recommendData);
-
-
+      if (
+        allPlaces.length > 0 &&
+        recommend.length > 0 &&
+        explorePlaces.length > 0
+      ) {
+        console.log("⚡ ใช้ข้อมูลจาก STORE ทันที");
 
         setRecommendLoading(false);
 
+        // ร้านอาหารไม่ต้องบล็อกหน้า
+        loadAllRestaurants().then((data) => {
+          if (!cancelled) {
+            setRestaurants(data);
+          }
+        });
 
-
+        return;
       }
 
-      catch (err) {
+      // ==========================================
+      // 2. โหลด Travel Data
+      // ==========================================
 
-        console.error(
-          "LOAD HOME ERROR",
-          err
-        );
+      console.time("loadTravelData");
 
-      }
+      const data = await loadTravelData();
 
+      console.timeEnd("loadTravelData");
+
+      if (!data || cancelled) return;
+
+      setUser(data.user);
+      setPreferences(data.preferences);
+      setAllPlaces(data.allPlaces);
+
+      // ==========================================
+      // 3. Recommendation ต้องโหลดทันที
+      // ==========================================
+
+      console.time("recommendation");
+
+      const {
+        data: recommendData,
+        fromCache,
+      } = await loadRecommendationCache(
+        data.user.id,
+        data.preferences
+      );
+
+      console.timeEnd("recommendation");
+
+      if (cancelled) return;
+
+      console.log(
+        fromCache
+          ? "⚡ ใช้ Recommendation จาก Cache"
+          : "🔥 สร้าง Recommendation ใหม่"
+      );
+
+      // ==========================================
+      // สำคัญมาก
+      // SET UI ทันที
+      // ==========================================
+
+      setRecommend(
+        recommendData.slice(0, 6)
+      );
+
+      setExplorePlaces(
+        recommendData
+      );
+
+      setAllRecommend(
+        recommendData
+      );
+
+      setRecommendLoading(false);
+
+      console.log(
+        "✅ RECOMMEND แสดงแล้ว"
+      );
+
+      // ==========================================
+      // 4. งานที่ไม่จำเป็นต่อ Recommend
+      //    ให้ทำ BACKGROUND
+      // ==========================================
+
+      Promise.allSettled([
+
+        // Restaurants
+        loadAllRestaurants()
+          .then((restaurantsData) => {
+
+            if (!cancelled) {
+              console.log(
+                "🍜 RESTAURANT TOTAL",
+                restaurantsData.length
+              );
+
+              setRestaurants(
+                restaurantsData
+              );
+            }
+
+          }),
+
+        // Location
+        getUserLocation()
+          .then(async (location) => {
+
+            try {
+
+              await supabase
+                .from("user_locations")
+                .upsert(
+                  {
+                    user_id: data.user.id,
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                    updated_at: new Date(),
+                  },
+                  {
+                    onConflict: "user_id",
+                  }
+                );
+
+              console.log(
+                "📍 saved location",
+                location
+              );
+
+            } catch (err) {
+
+              console.log(
+                "location save error",
+                err
+              );
+
+            }
+
+          })
+
+      ]);
+
+    } catch (err) {
+
+      console.error(
+        "❌ LOAD HOME ERROR",
+        err
+      );
+
+      setRecommendLoading(false);
 
     }
+  }
 
+  init();
 
+  return () => {
+    cancelled = true;
+  };
 
-    init();
-
-
-  }, []);
+}, []);
 
 
   return (
@@ -2933,6 +3006,7 @@ text-xl
                   tripInput={tripInput}
                   setTripInput={setTripInput}
                   setTripModal={setTripModal}
+                  onComplete={handleTripComplete}
 
                 />
               }
@@ -3094,34 +3168,32 @@ ${m.role === "user"
 
                 {/* AI Avatar */}
 
-                {
-                  m.role === "ai" && (
-
-                    <div
-                      className="
-w-9
-h-9
-rounded-full
-bg-gradient-to-br
-from-blue-500
-to-purple-500
-flex
-items-center
-justify-center
-shrink-0
-"
-                    >
-
-                      <Bot
-                        size={20}
-                        className="text-white"
-                      />
-
-                    </div>
-
-                  )
-
-                }
+                {m.role === "ai" && (
+  <div
+    className="
+      w-9
+      h-9
+      rounded-full
+      bg-white
+      border
+      flex
+      items-center
+      justify-center
+      shrink-0
+      overflow-hidden
+    "
+  >
+    <img
+      src={
+        aiModels.find(
+          model => model.id === selectedModel
+        )?.icon
+      }
+      alt={selectedModel}
+      className="w-7 h-7 object-contain"
+    />
+  </div>
+)}
 
 
 
@@ -3290,21 +3362,211 @@ hover:bg-gray-100
               className="w-full px-5 pt-4 pb-2 bg-transparent outline-none text-base"
             />
             <div className="flex items-center justify-between px-3 pb-3">
-              <button className="h-8 w-8 rounded-full hover:bg-accent flex items-center justify-center">
-                <Plus className="h-4 w-4" />
-              </button>
-              <div className="flex items-center gap-1">
-                <button className="h-8 w-8 rounded-full hover:bg-accent flex items-center justify-center">
-                  <Mic className="h-4 w-4 text-muted-foreground" />
-                </button>
-                <button
-                  onClick={handleSend}
-                  className="h-8 w-8 rounded-full bg-foreground text-background flex items-center justify-center"
-                >
-                  <ArrowUp className="h-4 w-4" />
-                </button>
+
+  {/* LEFT SIDE */}
+  <div className="flex items-center gap-2">
+
+    {/* Plus */}
+    <button
+      className="
+        h-8 w-8
+        rounded-full
+        hover:bg-accent
+        flex items-center justify-center
+      "
+    >
+      <Plus className="h-4 w-4" />
+    </button>
+
+    {/* AI MODEL SELECTOR */}
+    <div className="relative">
+
+      <button
+  type="button"
+  onClick={() => setShowModelMenu(prev => !prev)}
+  className="
+    flex
+    items-center
+    gap-2
+    px-3
+    h-8
+    rounded-full
+    border
+    border-border
+    bg-background
+    hover:bg-accent
+    transition
+    text-xs
+    font-medium
+  "
+>
+  {/* AI LOGO */}
+  <img
+    src={
+      aiModels.find(
+        model => model.id === selectedModel
+      )?.icon
+    }
+    alt="AI"
+    className="w-4 h-4 object-contain"
+  />
+
+  {/* ชื่อ AI */}
+  <span>
+    {aiModels.find(
+      model => model.id === selectedModel
+    )?.name}
+  </span>
+
+  {/* ลูกศร */}
+  <span className="text-muted-foreground">
+    ▾
+  </span>
+</button>
+
+
+      {/* MODEL MENU */}
+      {showModelMenu && (
+        <div
+          className="
+            absolute
+            bottom-11
+            left-0
+            w-56
+            bg-card
+            border
+            border-border
+            rounded-2xl
+            shadow-xl
+            p-2
+            z-50
+          "
+        >
+
+          <div className="px-3 py-2">
+            <p className="text-xs font-semibold">
+              เลือก AI
+            </p>
+
+            <p className="text-[11px] text-muted-foreground">
+              เลือกโมเดลสำหรับช่วยวางแผนท่องเที่ยว
+            </p>
+          </div>
+
+
+          {aiModels.map((model) => (
+            <button
+              key={model.id}
+              type="button"
+              onClick={() => {
+                setSelectedModel(model.id);
+                setShowModelMenu(false);
+              }}
+              className={`
+                w-full
+                flex
+                items-center
+                gap-3
+                px-3
+                py-2.5
+                rounded-xl
+                text-left
+                transition
+                ${
+                  selectedModel === model.id
+                    ? "bg-accent"
+                    : "hover:bg-accent/60"
+                }
+              `}
+            >
+
+              <div
+                className="
+                  w-8
+                  h-8
+                  rounded-lg
+                  bg-muted
+                  flex
+                  items-center
+                  justify-center
+                  text-sm
+                "
+              >
+                <img
+  src={model.icon}
+  alt={model.name}
+  className="w-5 h-5 object-contain"
+/>
               </div>
-            </div>
+
+              <div className="flex-1">
+
+                <div className="text-sm font-medium">
+                  {model.name}
+                </div>
+
+                <div className="text-[11px] text-muted-foreground">
+                  {model.description}
+                </div>
+
+              </div>
+
+              {selectedModel === model.id && (
+                <span className="text-xs font-bold">
+                  ✓
+                </span>
+              )}
+
+            </button>
+          ))}
+
+        </div>
+      )}
+
+    </div>
+
+  </div>
+
+
+  {/* RIGHT SIDE */}
+  <div className="flex items-center gap-1">
+
+    {/* Mic */}
+    <button
+      className="
+        h-8
+        w-8
+        rounded-full
+        hover:bg-accent
+        flex
+        items-center
+        justify-center
+      "
+    >
+      <Mic className="h-4 w-4 text-muted-foreground" />
+    </button>
+
+
+    {/* Send */}
+    <button
+      onClick={handleSend}
+      className="
+        h-8
+        w-8
+        rounded-full
+        bg-foreground
+        text-background
+        flex
+        items-center
+        justify-center
+      "
+    >
+      <ArrowUp className="h-4 w-4" />
+    </button>
+
+  </div>
+
+</div>
           </div>
           <p className="text-center text-xs text-muted-foreground mt-3">
             ⓘ TravelWise can make mistakes. Check important info.

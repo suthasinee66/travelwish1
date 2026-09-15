@@ -763,22 +763,116 @@ hover:bg-black/70
     strokeWidth={2.5}
   />
 </button>
-
 <img
-
-src={
-f.images?.[0]
-||
-"https://images.unsplash.com/photo-1501785888041-af3ef285b470"
-}
-
-className="
-w-full
-h-full
-object-cover
-"
-
+  src={
+    f.images?.[
+      imageIndex[f.att_id] || 0
+    ] ||
+    "https://images.unsplash.com/photo-1501785888041-af3ef285b470"
+  }
+  className="
+  absolute
+  inset-0
+  w-full
+  h-full
+  object-cover
+  transition
+  "
 />
+{
+  f.images?.length > 1 && (
+    <>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+
+          changeImage(
+            f.att_id,
+            "prev",
+            f.images.length
+          );
+        }}
+        className="
+        absolute
+        z-20
+        left-2
+        top-1/2
+        -translate-y-1/2
+        bg-black/40
+        text-white
+        rounded-full
+        w-8
+        h-8
+        flex
+        items-center
+        justify-center
+        hover:bg-black/70
+        "
+      >
+        ‹
+      </button>
+
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+
+          changeImage(
+            f.att_id,
+            "next",
+            f.images.length
+          );
+        }}
+        className="
+        absolute
+        z-20
+        right-2
+        top-1/2
+        -translate-y-1/2
+        bg-black/40
+        text-white
+        rounded-full
+        w-8
+        h-8
+        flex
+        items-center
+        justify-center
+        hover:bg-black/70
+        "
+      >
+        ›
+      </button>
+
+      {/* Dots */}
+      <div
+        className="
+        absolute
+        bottom-3
+        left-1/2
+        -translate-x-1/2
+        flex
+        gap-1
+        z-30
+        "
+      >
+        {f.images.map((_: any, i: number) => (
+          <div
+            key={i}
+            className={`
+              h-1.5
+              rounded-full
+              transition-all
+              ${
+                (imageIndex[f.att_id] || 0) === i
+                  ? "w-5 bg-white"
+                  : "w-1.5 bg-white/50"
+              }
+            `}
+          />
+        ))}
+      </div>
+    </>
+  )
+}
 
 
 </div>

@@ -1,10 +1,11 @@
-import { GoogleGenAI } from "@google/genai";
 import { createPlanner } from "./planner";
+import {
+    generateWithSelectedModel,
+    type AIModel
+} from "./ai";
 
 
-const ai = new GoogleGenAI({
-  apiKey: import.meta.env.VITE_GEMINI_API_KEY,
-});
+
 
 
 /* ==========================
@@ -241,7 +242,10 @@ return data;
 /* ==========================
    Update Memory
 ========================== */
-async function updateTrip(message: string) {
+async function updateTrip(
+  message: string,
+  selectedModel: AIModel = "gemini"
+) {
 
   // 1. ดึงข้อมูลด้วย Regex ก่อน
   let data = extractTripInfoFast(message);
@@ -253,7 +257,10 @@ async function updateTrip(message: string) {
 
     try {
 
-      const aiData = await extractTripInfo(message);
+      const aiData = await extractTripInfo(
+  message,
+  selectedModel
+);
 
       console.log("🤖 GEMINI:", aiData);
 
@@ -336,12 +343,15 @@ function isComplete() {
    Main Chat
 ========================== */
 export async function chatWithAI(
-  message:string,
-  messages?:any[],
-  preferences?:any,
-  attraction?:any[],
-  tripInput?:any
-):Promise<ChatResult>{
+  message: string,
+  messages?: any[],
+  preferences?: any,
+  attraction?: any[],
+  tripInput?: any,
+  selectedModel: AIModel = "gemini",
+  chatId?: string,
+  userId?: string
+): Promise<ChatResult> {
 
 if (tripInput) {
 
@@ -368,7 +378,10 @@ if (tripInput) {
 }
 
 
-await updateTrip(message);
+await updateTrip(
+  message,
+  selectedModel
+);
 
 
 if(!isComplete()){
@@ -389,9 +402,11 @@ return {
 }
 
 
-const plan =
-await createPlanner(
- currentTrip as any
+const plan = await createPlanner(
+  currentTrip as any,
+  chatId ?? "",
+  userId ?? "",
+  selectedModel
 );
 
 
@@ -412,13 +427,13 @@ tripInfo:currentTrip
 
 }
 
-async function extractTripInfo(message:string){
-
-const response =
-await ai.models.generateContent({
-
-model:"gemini-2.5-flash",
-contents: `
+async function extractTripInfo(
+  message: string,
+  selectedModel: AIModel = "gemini"
+) {
+const text = await generateAIText(
+  selectedModel,
+  `
 อ่านข้อความของผู้ใช้
 
 "${message}"
@@ -451,11 +466,7 @@ contents: `
   "atmosphere": null
 }
 `
-
-});
-
-
-const text=response.text ?? "";
+);
 
 
 return JSON.parse(
@@ -479,7 +490,17 @@ function needAI(data: any) {
   );
 
 }
+async function generateAIText(
+    model: AIModel,
+    prompt: string
+): Promise<string> {
 
+    return generateWithSelectedModel(
+        model,
+        prompt
+    );
+
+}
 
 
 

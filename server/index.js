@@ -10,6 +10,10 @@ const app = express();
 
 app.use(cors());
 
+app.use(express.json({
+  limit: "20mb"
+}));
+
 async function checkImage(url) {
   try {
     const response = await axios.get(url, {
@@ -135,6 +139,199 @@ res.json({
   images:[]
 });
   }
+});
+
+
+// ============================================
+// OKMD AI
+// ============================================
+
+const OKMD_BASE_URL =
+  "https://gen.ai.kku.ac.th/okmd/api/v1";
+
+const OKMD_MODELS = {
+  claude: "claude-sonnet-5",
+  gpt: "gpt-5.4",
+  gemini: "gemini-3.7-flash",
+};
+
+
+app.post("/api/ai", async (req, res) => {
+
+  try {
+
+    const {
+      model,
+      prompt,
+    } = req.body;
+
+    console.log("====================================");
+    console.log("🤖 OKMD AI REQUEST");
+    console.log("Model:", model);
+    console.log("Prompt Length:", prompt?.length);
+    console.log("====================================");
+
+    // ตรวจสอบ model
+    if (!model || !OKMD_MODELS[model]) {
+
+      return res.status(400).json({
+        error: "Invalid AI model",
+        availableModels: Object.keys(OKMD_MODELS),
+      });
+
+    }
+
+    // ตรวจสอบ prompt
+    if (!prompt) {
+
+      return res.status(400).json({
+        error: "Prompt is required",
+      });
+
+    }
+
+    // ตรวจ API Key
+    if (!process.env.OKMD_API_KEY) {
+
+      console.error(
+        "❌ OKMD_API_KEY ไม่มีใน server/.env"
+      );
+
+      return res.status(500).json({
+        error: "OKMD_API_KEY is not configured",
+      });
+
+    }
+
+    const modelId =
+      OKMD_MODELS[model];
+
+    console.log(
+      "📡 ส่งไป OKMD model:",
+      modelId
+    );
+
+    const start = performance.now();
+
+    const response = await axios.post(
+      `${OKMD_BASE_URL}/chat/completions`,
+      {
+        model: modelId,
+
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+
+        temperature: 0.2,
+
+        max_tokens: 12000,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+
+          Authorization:
+            `Bearer ${process.env.OKMD_API_KEY}`,
+        },
+
+        timeout:  300000,
+      }
+    );
+
+    const end = performance.now();
+
+    const data = response.data;
+
+    const content =
+      data?.choices?.[0]?.message?.content;
+
+    console.log(
+      `✅ OKMD ตอบกลับใน ${(
+        (end - start) /
+        1000
+      ).toFixed(2)} วินาที`
+    );
+
+    console.log(
+      "Model:",
+      data?.model
+    );
+
+    console.log(
+      "Response Length:",
+      content?.length
+    );
+
+    console.log(
+      "Usage:",
+      data?.usage
+    );
+
+    console.log("====================================");
+
+    if (!content) {
+
+      console.error(
+        "❌ OKMD ไม่มี content"
+      );
+
+      return res.status(500).json({
+        error: "OKMD returned empty response",
+        raw: data,
+      });
+
+    }
+
+    return res.json({
+
+      content,
+
+      model: data?.model,
+
+      usage: data?.usage,
+
+      model_quota:
+        data?.model_quota,
+
+    });
+
+  } catch (error) {
+
+    console.error(
+      "❌ OKMD ERROR"
+    );
+
+    console.error(
+      "Status:",
+      error.response?.status
+    );
+
+    console.error(
+      "Data:",
+      error.response?.data
+    );
+
+    console.error(
+      "Message:",
+      error.message
+    );
+
+    return res.status(
+      error.response?.status || 500
+    ).json({
+
+      error:
+        error.response?.data ||
+        error.message ||
+        "OKMD API error",
+
+    });
+
+  }
+
 });
 
 app.listen(5000, () => {
