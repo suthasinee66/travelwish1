@@ -10,6 +10,7 @@ import {
   MapPin,
   Users,
   Search,
+  Map,
 } from "lucide-react";
 
 
@@ -416,7 +417,7 @@ className="aurora-canvas flex min-h-screen"
 
                   key={i}
 
-className="glass-surface hover-lift group cursor-pointer overflow-hidden rounded-3xl border-white/70"
+className="glass-surface animate-fade-up overflow-hidden rounded-3xl border-white/70"
 
                 >
 
@@ -466,14 +467,12 @@ className="glass-surface hover-lift group cursor-pointer overflow-hidden rounded
                   }}
 
                   className="
-                    rounded-2xl
+                    glass-surface
+                    hover-lift
                     overflow-hidden
-                    border
-                    bg-white
-                    hover:shadow-xl
-                    transition
+                    rounded-3xl
+                    border-white/70
                     cursor-pointer
-                    group
                   "
 
                 >
@@ -656,10 +655,12 @@ className="glass-surface hover-lift group cursor-pointer overflow-hidden rounded
     className="
       fixed
       inset-0
-      bg-black/40
       flex
       items-center
       justify-center
+      bg-[#49334f]/35
+      p-4
+      backdrop-blur-sm
       z-50
     "
     onClick={() => setShowCreateModal(false)}
@@ -667,11 +668,13 @@ className="glass-surface hover-lift group cursor-pointer overflow-hidden rounded
 
     <div
       className="
-        bg-white
+        glass-surface
+        w-full
+        max-w-[420px]
         rounded-3xl
-        p-8
-        w-[420px]
-        shadow-xl
+        border-white/70
+        p-6
+        shadow-2xl sm:p-8
       "
       onClick={(e)=>e.stopPropagation()}
     >
@@ -780,19 +783,19 @@ className="glass-surface hover-lift group cursor-pointer overflow-hidden rounded
           <div className="flex items-center gap-3">
 
 
-            <div
+              <div
               className="
-                h-10
-                w-10
-                rounded-full
-                bg-gray-100
                 flex
+                size-10
                 items-center
                 justify-center
+                rounded-full
+                bg-[#f1e8f7]
+                text-[#80618d]
               "
             >
 
-              🗺️
+              <Map size={18}/>
 
             </div>
 
