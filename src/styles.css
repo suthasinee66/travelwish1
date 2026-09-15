@@ -134,16 +134,66 @@
 }
 
 @layer base {
-  * {
-    border-color: var(--color-border);
-  }
-
+  * { border-color: var(--color-border); }
+  html { background: #faf7ff; }
   body {
-    background-color: var(--color-background);
+    min-width: 320px;
+    background: var(--color-background);
     color: var(--color-foreground);
     font-family: "Noto Sans Thai", sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
   }
+  button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
+  :focus-visible { outline: 3px solid oklch(0.75 0.12 330 / 0.55); outline-offset: 3px; }
 }
+
+.glass-surface {
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  box-shadow: 0 18px 50px rgba(91, 72, 117, 0.10), inset 0 1px rgba(255,255,255,.75);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+.glass-strong { background: rgba(255,255,255,.82); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); }
+.aurora-canvas {
+  background:
+    radial-gradient(ellipse 70% 55% at 12% 5%, rgba(220, 198, 255, .62), transparent 68%),
+    radial-gradient(ellipse 60% 52% at 88% 0%, rgba(255, 199, 226, .56), transparent 65%),
+    radial-gradient(ellipse 70% 55% at 80% 94%, rgba(184, 226, 255, .52), transparent 67%),
+    radial-gradient(ellipse 55% 48% at 6% 96%, rgba(192, 242, 223, .44), transparent 68%),
+    #faf7ff;
+}
+.pastel-primary { background: #6f456f; color: white; box-shadow: 0 10px 24px rgba(111,69,111,.22); }
+.pastel-primary:hover { background: #5e385f; transform: translateY(-1px); }
+.pastel-secondary { background: rgba(226, 211, 247, .72); color: #573d63; }
+.pastel-ghost:hover { background: rgba(232, 216, 247, .48); color: #6f456f; }
+.pastel-input { background: rgba(255,255,255,.6); border-color: rgba(176,150,201,.36); }
+.pastel-input:focus { border-color: #c596c3; box-shadow: 0 0 0 4px rgba(197,150,195,.16); }
+.pastel-chip { background: rgba(230, 218, 248, .68); color: #654d78; border: 1px solid rgba(255,255,255,.72); }
+.hover-lift { transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease; }
+.hover-lift:hover { transform: translateY(-3px); box-shadow: 0 16px 32px rgba(91,72,117,.13); }
+.travel-home { min-height: 100vh; background: transparent; }
+.travel-home aside { margin: 14px; height: calc(100vh - 28px); border: 1px solid rgba(255,255,255,.82) !important; border-radius: 24px; background: rgba(255,255,255,.58) !important; box-shadow: 0 18px 42px rgba(91,72,117,.10); backdrop-filter: blur(22px); }
+.travel-main { background: transparent; }
+.travel-header { border-bottom: 1px solid rgba(255,255,255,.68); background: rgba(255,255,255,.34); backdrop-filter: blur(16px); }
+.travel-hero h1 { color: #49334f; letter-spacing: -.045em; }
+.travel-hero p { color: #806f88; }
+.travel-composer { background: rgba(255,255,255,.72) !important; border-color: rgba(255,255,255,.9) !important; box-shadow: 0 20px 42px rgba(91,72,117,.12) !important; backdrop-filter: blur(20px); }
+.travel-composer:focus-within { border-color: #c596c3 !important; box-shadow: 0 22px 48px rgba(111,69,111,.16) !important; }
+@media (max-width: 720px) {
+  .travel-home { display: block; padding-bottom: 74px; }
+  .travel-home aside { position: fixed; z-index: 40; inset: auto 10px 10px; width: auto; height: 62px; margin: 0; border-radius: 22px; }
+  .travel-home aside > div:first-child, .travel-home aside h3, .travel-home aside .flex-1.min-h-0 { display: none; }
+  .travel-home aside nav { display: flex; height: 100%; align-items: center; justify-content: space-around; padding: 0 6px; }
+  .travel-home aside nav > div { flex: 1; }
+  .travel-home aside nav a, .travel-home aside nav button { justify-content: center; padding: 10px 4px; }
+  .travel-home aside nav span { display: none; }
+  .travel-home aside nav button.mt-4 { margin-top: 0; font-size: 0; background: transparent; box-shadow: none; }
+  .travel-home aside nav button.mt-4::before { content: '+'; font-size: 24px; color: #6f456f; }
+  .travel-home aside nav svg { margin: auto; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
 
 /* TravelWise home: warm editorial palette and calm, spacious surfaces. */
 .travel-home {

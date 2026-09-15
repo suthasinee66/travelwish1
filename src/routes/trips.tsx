@@ -243,12 +243,7 @@ function Trips() {
   return (
 
     <div
-      className="
-        flex
-        h-screen
-        bg-background
-        text-foreground
-      "
+className="aurora-canvas flex h-screen"
     >
 
 

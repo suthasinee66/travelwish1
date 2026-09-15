@@ -82,10 +82,10 @@ export default function Sidebar({
 
     const [showCreateModal, setShowCreateModal] = useState(false);
     return (
-        <aside className="w-60 shrink-0 border-r border-border flex flex-col bg-sidebar h-screen">
+        <aside className="w-60 shrink-0 flex flex-col bg-transparent h-screen text-[#573d63]">
 
     {/* ================= HEADER ================= */}
-    <div className="px-5 py-5 flex items-center gap-2 shrink-0">
+    <div className="px-5 py-5 flex items-center gap-2 shrink-0 text-[#6f456f]">
         <Sparkles className="h-6 w-6" />
         <span className="text-lg font-semibold tracking-tight">
             TravelWise.
@@ -169,9 +169,9 @@ export default function Sidebar({
                     w-full
                     text-sm
                     font-medium
-                    bg-secondary
-                    hover:bg-accent
-                    rounded-full
+                    pastel-secondary
+                    hover:bg-white/80
+                    rounded-full shadow-sm
                     py-2.5
                 "
             >

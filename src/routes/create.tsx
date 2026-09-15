@@ -46,11 +46,7 @@ function CreateTrip(){
   return (
 
     <div
-      className="
-        flex
-        h-screen
-        bg-background
-      "
+      className="aurora-canvas flex h-screen"
     >
 
 
@@ -76,14 +72,7 @@ function CreateTrip(){
 
 
         <div
-          className="
-            w-full
-            max-w-xl
-            bg-white
-            rounded-3xl
-            shadow-xl
-            p-8
-          "
+          className="glass-surface hover-lift w-full max-w-xl rounded-[28px] p-8"
         >
 
 
