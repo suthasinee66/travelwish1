@@ -2882,7 +2882,7 @@ const handleSend = async () => {
 
 
   return (
-    <div className="flex h-screen bg-background text-foreground">
+    <div className="travel-home flex h-screen bg-background text-foreground">
       {/* Sidebar */}
       <Sidebar
         user={user}
@@ -3035,6 +3035,7 @@ text-xl
       {/* Center */}
       <main
         className={`
+    travel-main
     flex-1
     flex
     flex-col
@@ -3056,7 +3057,7 @@ text-xl
             onClick={() => setExploreOpen(false)}
           />
         )}
-        <header className="h-14 flex items-center px-6">
+        <header className="travel-header h-16 flex items-center px-6">
           <button onClick={handleNewChat} className="text-sm font-medium flex items-center gap-1">
             New chat <span className="text-muted-foreground">▾</span>
           </button>
@@ -3335,7 +3336,7 @@ hover:bg-gray-100
         {/* Chat input */}
         <div className="px-6 pb-8"></div>
         {!hasChatStarted && (
-          <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
+          <div className="travel-hero flex-1 flex flex-col items-center justify-center px-6 text-center">
             <div className="text-5xl mb-4">🌍✨</div>
             <h1 className="text-3xl font-semibold tracking-tight">
               Where to today, {user?.user_metadata?.full_name || "Guest"}?
@@ -3350,7 +3351,7 @@ hover:bg-gray-100
 
         {/* Chat input */}
         <div className="px-6 pb-8">
-          <div className="max-w-2xl mx-auto border border-border rounded-2xl shadow-sm bg-card">
+          <div className="travel-composer max-w-2xl mx-auto border border-border rounded-2xl shadow-sm bg-card">
             <input
               value={input}
               onChange={(e) => {

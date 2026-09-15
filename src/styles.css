@@ -144,3 +144,108 @@
     font-family: "Noto Sans Thai", sans-serif;
   }
 }
+
+/* TravelWise home: warm editorial palette and calm, spacious surfaces. */
+.travel-home {
+  --travel-ink: #18342f;
+  --travel-moss: #2f6656;
+  --travel-sand: #f7f4ec;
+  --travel-line: #e6e2d8;
+  background: var(--travel-sand);
+}
+
+.travel-home aside {
+  background: rgba(255, 255, 255, 0.76) !important;
+  border-right: 1px solid var(--travel-line) !important;
+  backdrop-filter: blur(18px);
+}
+
+.travel-main {
+  background:
+    radial-gradient(circle at 78% 13%, rgba(224, 189, 119, 0.16), transparent 24rem),
+    linear-gradient(135deg, #fbfaf6 0%, #f5f2ea 100%);
+}
+
+.travel-header {
+  border-bottom: 1px solid rgba(230, 226, 216, 0.75);
+  background: rgba(251, 250, 246, 0.82);
+  backdrop-filter: blur(16px);
+}
+
+.travel-header button {
+  transition: color 180ms ease, transform 180ms ease;
+}
+
+.travel-header button:hover {
+  color: var(--travel-moss);
+  transform: translateY(-1px);
+}
+
+.travel-header > button:last-child {
+  background: var(--travel-ink) !important;
+  box-shadow: 0 8px 20px rgba(24, 52, 47, 0.18);
+}
+
+.travel-hero {
+  position: relative;
+  min-height: 21rem;
+}
+
+.travel-hero::before {
+  content: "";
+  width: 5rem;
+  height: 0.25rem;
+  border-radius: 999px;
+  background: #d4a85b;
+  margin-bottom: 1.25rem;
+}
+
+.travel-hero h1 {
+  color: var(--travel-ink);
+  font-size: clamp(2rem, 4vw, 3.35rem);
+  letter-spacing: -0.045em;
+  line-height: 1.08;
+}
+
+.travel-hero p {
+  color: #6f776f;
+  font-size: 1.05rem;
+  line-height: 1.8;
+}
+
+.travel-composer {
+  border-color: rgba(211, 208, 198, 0.9) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  box-shadow: 0 18px 40px rgba(44, 57, 49, 0.11) !important;
+  transition: box-shadow 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.travel-composer:focus-within {
+  border-color: #9eb8a8 !important;
+  box-shadow: 0 20px 46px rgba(44, 57, 49, 0.16) !important;
+  transform: translateY(-2px);
+}
+
+.travel-composer input::placeholder {
+  color: #9a9f99;
+}
+
+@media (max-width: 900px) {
+  .travel-main {
+    padding-right: 0 !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .travel-header {
+    padding-inline: 1rem;
+  }
+
+  .travel-header > div {
+    gap: 0.75rem;
+  }
+
+  .travel-hero {
+    min-height: 18rem;
+  }
+}
