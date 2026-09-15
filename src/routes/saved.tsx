@@ -240,12 +240,12 @@ async function loadSaved(){
 }
 
   return (
-    <div className="flex h-screen bg-background text-foreground">
+    <div className="travel-home flex h-screen text-foreground aurora-canvas">
       <Sidebar user={user}/>
 
-      <main className="flex-1 overflow-y-auto min-w-0">
-        <header className="h-14 flex items-center gap-4 px-8 border-b border-border sticky top-0 bg-background/90 backdrop-blur z-10">
-          <h1 className="text-sm font-semibold">Saved</h1>
+      <main className="travel-main flex-1 overflow-y-auto min-w-0">
+        <header className="travel-header h-16 flex items-center gap-4 px-8 sticky top-0 z-10">
+          <h1 className="text-sm font-semibold tracking-wide text-[#49334f]">Saved</h1>
           <div className="flex-1 flex justify-center">
             <div className="relative w-full max-w-md">
               <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -261,6 +261,11 @@ async function loadSaved(){
         </header>
 
         <div className="px-8 py-7 max-w-6xl">
+          <div className="mb-7">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#a2779f]">Your travel library</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-[#49334f]">Places worth remembering</h2>
+            <p className="mt-1 text-sm text-[#806f88]">Keep your favorite discoveries close for the next adventure.</p>
+          </div>
           {/* Collection chips */}
           <div className="flex items-center gap-2 overflow-x-auto pb-6 scrollbar-hide">
             {collections.map((c, i) => (
@@ -297,7 +302,7 @@ async function loadSaved(){
               {savedItems.map((s) => (
                 <article
                   key={s.id}
-                  className="rounded-2xl overflow-hidden border border-border bg-card cursor-pointer group"
+                  className="glass-surface rounded-3xl overflow-hidden cursor-pointer group hover-lift"
                 >
                   <div className="relative h-44 overflow-hidden">
                     <img

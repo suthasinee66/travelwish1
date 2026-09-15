@@ -3256,6 +3256,82 @@ ${m.role === "user"
       <li className="ml-5 list-disc">
         {children}
       </li>
+    ),
+
+    // =========================
+    // TABLE
+    // =========================
+
+    table: ({ children }) => (
+      <div className="
+        w-full
+        overflow-x-auto
+        my-5
+        rounded-xl
+        border
+        border-gray-200
+      ">
+        <table className="
+          min-w-[700px]
+          w-full
+          border-collapse
+          text-sm
+        ">
+          {children}
+        </table>
+      </div>
+    ),
+
+    thead: ({ children }) => (
+      <thead className="
+        bg-gray-50
+        border-b
+        border-gray-200
+      ">
+        {children}
+      </thead>
+    ),
+
+    tbody: ({ children }) => (
+      <tbody>
+        {children}
+      </tbody>
+    ),
+
+    tr: ({ children }) => (
+      <tr className="
+        border-b
+        border-gray-100
+        last:border-b-0
+        hover:bg-gray-50
+      ">
+        {children}
+      </tr>
+    ),
+
+    th: ({ children }) => (
+      <th className="
+        px-4
+        py-3
+        text-left
+        font-semibold
+        whitespace-nowrap
+        align-middle
+      ">
+        {children}
+      </th>
+    ),
+
+    td: ({ children }) => (
+      <td className="
+        px-4
+        py-3
+        align-top
+        leading-6
+        whitespace-normal
+      ">
+        {children}
+      </td>
     )
   }}
 >

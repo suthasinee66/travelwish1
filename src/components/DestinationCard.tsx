@@ -7,7 +7,7 @@ interface DestinationCardProps {
 
 const DestinationCard = ({ destination }: DestinationCardProps) => {
   return (
-    <div className="bg-card rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+    <div className="bg-card rounded-2xl overflow-hidden shadow-md shadow-cyan-950/10 border border-border/70 hover:shadow-2xl hover:shadow-orange-900/15 transition-all duration-300 hover:-translate-y-2 group">
       <div className="relative overflow-hidden h-52">
         <img
           src={destination.image}

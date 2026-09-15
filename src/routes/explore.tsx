@@ -290,12 +290,12 @@ if(!error){
 };
 
   return (
-    <div className="flex h-screen bg-background text-foreground">
+    <div className="travel-home flex h-screen text-foreground aurora-canvas">
       <Sidebar user={user}/>
 
-      <main className="flex-1 overflow-y-auto min-w-0">
-        <header className="h-14 flex items-center gap-4 px-8 border-b border-border sticky top-0 bg-background/90 backdrop-blur z-10">
-          <h1 className="text-sm font-semibold">Explore</h1>
+      <main className="travel-main flex-1 overflow-y-auto min-w-0">
+        <header className="travel-header h-16 flex items-center gap-4 px-8 sticky top-0 z-10">
+          <h1 className="text-sm font-semibold tracking-wide text-[#49334f]">Explore</h1>
           <div className="flex-1 flex justify-center">
             <div className="relative w-full max-w-md">
               <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -385,17 +385,7 @@ Recommend for you
   {recommend.map((place) => (
     <article
       key={place.att_id}
-      className="
-        w-72
-        shrink-0
-        snap-start
-        rounded-2xl
-        overflow-hidden
-        border
-        bg-card
-        cursor-pointer
-        group
-      "
+      className="glass-surface w-72 shrink-0 snap-start rounded-3xl overflow-hidden cursor-pointer group hover-lift"
     >
       <div className="
 relative
