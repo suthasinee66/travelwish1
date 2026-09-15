@@ -580,3 +580,114 @@
   background: rgba(255, 255, 255, 0.84);
   border-color: rgba(255, 255, 255, 0.94);
 }
+
+/* Final TravelWish premium pastel system: keep route logic untouched while
+   giving every screen one calm, recognizable visual language. */
+:root {
+  --background: oklch(0.975 0.012 285);
+  --foreground: oklch(0.22 0.025 285);
+  --card: oklch(0.99 0.006 285);
+  --card-foreground: oklch(0.22 0.025 285);
+  --primary: oklch(0.22 0.025 285);
+  --primary-foreground: oklch(0.99 0.004 285);
+  --secondary: oklch(0.93 0.045 292);
+  --secondary-foreground: oklch(0.32 0.04 285);
+  --muted: oklch(0.95 0.018 285);
+  --muted-foreground: oklch(0.48 0.035 285);
+  --accent: oklch(0.92 0.055 330);
+  --accent-foreground: oklch(0.29 0.04 285);
+  --border: oklch(0.91 0.025 285);
+  --input: oklch(0.91 0.025 285);
+  --ring: oklch(0.72 0.12 300);
+}
+
+html,
+body {
+  background: #f5f5f8;
+}
+
+.glass-surface,
+.glass-strong {
+  border: 1px solid rgba(255, 255, 255, 0.86);
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 18px 48px rgba(126, 119, 165, 0.12), inset 0 1px rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(24px) saturate(118%);
+  -webkit-backdrop-filter: blur(24px) saturate(118%);
+}
+
+.aurora-canvas {
+  background:
+    radial-gradient(ellipse 70% 54% at 7% 0%, rgba(199, 184, 229, 0.58), transparent 68%),
+    radial-gradient(ellipse 58% 48% at 94% 3%, rgba(232, 184, 211, 0.5), transparent 66%),
+    radial-gradient(ellipse 64% 52% at 86% 100%, rgba(185, 220, 232, 0.52), transparent 68%),
+    radial-gradient(ellipse 48% 42% at 0% 92%, rgba(210, 235, 221, 0.48), transparent 68%),
+    #f5f5f8;
+}
+
+.pastel-primary {
+  background: #292631 !important;
+  color: #fff;
+  border: 1px solid rgba(41, 38, 49, 0.08);
+  box-shadow: 0 12px 24px rgba(41, 38, 49, 0.16);
+}
+
+.pastel-primary:hover { background: #454052 !important; }
+.pastel-secondary,
+.pastel-chip { background: rgba(199, 184, 229, 0.56); color: #51466d; }
+.pastel-input { background: rgba(255, 255, 255, 0.64); border-color: rgba(175, 160, 210, 0.42); }
+
+.travel-trips,
+.travel-home {
+  background: transparent;
+}
+
+.travel-trips > main,
+.travel-main {
+  background: transparent;
+}
+
+.travel-trips .travel-header,
+.travel-home .travel-header {
+  background: rgba(255, 255, 255, 0.42);
+  border-bottom-color: rgba(255, 255, 255, 0.74);
+}
+
+.travel-trips h2,
+.travel-trips h3,
+.travel-home h1,
+.travel-home h2,
+.travel-home h3 {
+  color: #292631;
+}
+
+.travel-trips .trip-create-card {
+  border-color: rgba(175, 160, 210, 0.58);
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.travel-trips .trip-create-card > div {
+  background: rgba(199, 184, 229, 0.52);
+}
+
+.travel-trips .trip-card {
+  background: rgba(255, 255, 255, 0.64);
+}
+
+.travel-trips .trip-card button {
+  background: rgba(255, 255, 255, 0.52);
+  border-color: rgba(175, 160, 210, 0.42);
+}
+
+.travel-trips .trip-card button:hover {
+  background: rgba(232, 184, 211, 0.28);
+}
+
+.travel-trips .trip-modal {
+  border-radius: 28px;
+  box-shadow: 0 28px 80px rgba(41, 38, 49, 0.2);
+}
+
+@media (max-width: 720px) {
+  .travel-trips .travel-header { gap: 0.75rem; }
+  .travel-trips .travel-header > div { order: 3; flex-basis: 100%; }
+}
