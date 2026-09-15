@@ -101,13 +101,7 @@ function CreateWithAI() {
 
   return (
 
-    <div
-      className="
-        flex
-        h-screen
-        bg-background
-      "
-    >
+    <div className="travel-home flex h-screen text-foreground aurora-canvas">
 
 
 
@@ -117,12 +111,7 @@ function CreateWithAI() {
 
 
       <main
-        className="
-          flex-1
-          flex
-          flex-col
-          min-w-0
-        "
+        className="travel-main flex-1 flex flex-col min-w-0"
       >
 
 
@@ -131,14 +120,7 @@ function CreateWithAI() {
         {/* Header */}
 
         <header
-          className="
-            h-16
-            border-b
-            flex
-            items-center
-            px-6
-            gap-3
-          "
+          className="travel-header h-16 flex items-center px-6 gap-3"
         >
 
 
@@ -329,14 +311,7 @@ function CreateWithAI() {
 
 
           <div
-            className="
-              max-w-2xl
-              mx-auto
-              border
-              rounded-2xl
-              shadow-sm
-              bg-card
-            "
+            className="travel-composer max-w-2xl mx-auto border rounded-3xl shadow-sm bg-card"
           >
 
 
