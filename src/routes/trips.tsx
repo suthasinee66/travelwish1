@@ -243,7 +243,7 @@ function Trips() {
   return (
 
     <div
-className="aurora-canvas flex h-screen"
+className="aurora-canvas flex min-h-screen"
     >
 
 
@@ -261,19 +261,7 @@ className="aurora-canvas flex h-screen"
 
 
         <header
-          className="
-            sticky
-            top-0
-            z-10
-            h-14
-            border-b
-            bg-background/90
-            backdrop-blur
-            flex
-            items-center
-            gap-4
-            px-8
-          "
+          className="travel-header sticky top-0 z-10 flex min-h-16 items-center gap-4 border-b border-white/60 bg-white/35 px-4 backdrop-blur-xl sm:px-8"
         >
 
 
@@ -322,17 +310,7 @@ className="aurora-canvas flex h-screen"
 
                 placeholder="Search your trips..."
 
-                className="
-                  w-full
-                  rounded-full
-                  border
-                  bg-white
-                  pl-9
-                  pr-4
-                  py-2
-                  text-sm
-                  outline-none
-                "
+                className="pastel-input w-full rounded-full border px-4 py-2 pl-9 text-sm outline-none"
 
               />
 
@@ -346,18 +324,7 @@ className="aurora-canvas flex h-screen"
 
              onClick={() => setShowCreateModal(true)}
 
-            className="
-              rounded-full
-              bg-black
-              text-white
-              px-5
-              py-2
-              text-sm
-              flex
-              items-center
-              gap-2
-              hover:bg-gray-800
-            "
+            className="pastel-primary flex items-center gap-2 rounded-full px-5 py-2 text-sm"
 
           >
 
@@ -375,16 +342,11 @@ className="aurora-canvas flex h-screen"
 
 
         <div
-          className="
-            max-w-6xl
-            mx-auto
-            px-8
-            py-8
-          "
+          className="mx-auto max-w-6xl px-4 py-8 sm:px-8 sm:py-10"
         >
 
 
-          <h2 className="text-3xl font-semibold">
+          <h2 className="text-3xl font-semibold tracking-tight text-[#49334f] sm:text-4xl">
             Upcoming Trips
           </h2>
 
@@ -412,18 +374,7 @@ className="aurora-canvas flex h-screen"
 
                onClick={() => setShowCreateModal(true)}
 
-              className="
-                border-2
-                border-dashed
-                rounded-2xl
-                min-h-[260px]
-                flex
-                flex-col
-                justify-center
-                items-center
-                gap-3
-                hover:bg-gray-50
-              "
+              className="glass-surface hover-lift flex min-h-[260px] flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-[#c596c3]/50 text-[#654d78]"
 
             >
 
@@ -465,12 +416,7 @@ className="aurora-canvas flex h-screen"
 
                   key={i}
 
-                  className="
-                    rounded-2xl
-                    border
-                    overflow-hidden
-                    animate-pulse
-                  "
+className="glass-surface hover-lift group cursor-pointer overflow-hidden rounded-3xl border-white/70"
 
                 >
 
@@ -600,12 +546,7 @@ className="aurora-canvas flex h-screen"
 
 
                     <div
-                      className="
-                        mt-4
-                        space-y-3
-                        text-sm
-                        text-gray-500
-                      "
+                      className="mt-4 flex flex-col gap-3 text-sm text-[#806f88]"
                     >
 
 
