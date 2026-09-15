@@ -560,62 +560,6 @@ function Trips() {
 
           </section>
 
-          {/* ==================================================
-              EMPTY STATE
-          ================================================== */}
-
-          {!loading &&
-            filteredTrips.length === 0 && (
-              <div className="py-16 text-center">
-
-                <div
-                  className="
-                    mx-auto
-                    h-12
-                    w-12
-                    rounded-full
-                    bg-secondary
-                    flex
-                    items-center
-                    justify-center
-                  "
-                >
-                  <MapPin className="h-5 w-5 text-muted-foreground" />
-                </div>
-
-                <h3 className="mt-4 font-semibold">
-                  No trips found
-                </h3>
-
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Try another search or create a new trip.
-                </p>
-
-                <button
-                  onClick={() =>
-                    setShowCreateModal(true)
-                  }
-                  className="
-                    mt-4
-                    text-sm
-                    font-medium
-                    border
-                    border-border
-                    rounded-full
-                    px-4
-                    py-2
-                    hover:bg-accent
-                    transition
-                  "
-                >
-                  <span className="inline-flex items-center gap-1.5">
-                    <Plus className="h-4 w-4" />
-                    Create Trip
-                  </span>
-                </button>
-
-              </div>
-            )}
 
         </div>
 

@@ -3064,81 +3064,68 @@ text-xl
           <div className="flex-1 flex justify-center">
             <div className="flex items-center gap-6 text-sm">
               <button
-                onClick={() => {
-                  setActiveStep("where");
-                  setTripModal(true);
-                }}
-              >
-                Where
-                <br />
+  onClick={() => {
+    setActiveStep("where");
+    setTripModal(true);
+  }}
+  className="transition-colors hover:text-purple-600"
+>
+  Where
+  <br />
+  <span className="text-xs text-gray-400">
+    {tripInput.province || "Add location"}
+  </span>
+</button>
 
-                <span className="text-xs text-gray-400">
-                  {tripInput.province || "Add location"}
-                </span>
+<button
+  onClick={() => {
+    setActiveStep("days");
+    setTripModal(true);
+  }}
+  className="transition-colors hover:text-purple-600"
+>
+  Days
+  <br />
+  <span className="text-xs text-gray-400">
+    {tripInput.days
+      ? `${tripInput.days} วัน`
+      : "Add dates"}
+  </span>
+</button>
 
-              </button>
+<button
+  onClick={() => {
+    setActiveStep("who");
+    setTripModal(true);
+  }}
+  className="transition-colors hover:text-purple-600"
+>
+  Who
+  <br />
+  <span className="text-xs text-gray-400">
+    {tripInput.companion || "Add people"}
+  </span>
+</button>
 
-
-
-              <button
-                onClick={() => {
-                  setActiveStep("days");
-                  setTripModal(true);
-                }}
-              >
-                Days
-                <br />
-
-                <span className="text-xs text-gray-400">
-                  {tripInput.days
-                    ? `${tripInput.days} วัน`
-                    : "Add dates"}
-                </span>
-
-              </button>
-
-
-
-              <button
-                onClick={() => {
-                  setActiveStep("who");
-                  setTripModal(true);
-                }}
-              >
-                Who
-                <br />
-
-                <span className="text-xs text-gray-400">
-                  {tripInput.companion || "Add people"}
-                </span>
-
-              </button>
-
-
-
-              <button
-                onClick={() => {
-                  setActiveStep("budget");
-                  setTripModal(true);
-                }}
-              >
-                Budget
-                <br />
-
-                <span className="text-xs text-gray-400">
-                  {tripInput.budget
-                    ? `${tripInput.budget.toLocaleString()} บาท`
-                    : "Add budget"}
-                </span>
-
-              </button>
+<button
+  onClick={() => {
+    setActiveStep("budget");
+    setTripModal(true);
+  }}
+  className="transition-colors hover:text-purple-600"
+>
+  Budget
+  <br />
+  <span className="text-xs text-gray-400">
+    {tripInput.budget
+      ? `${tripInput.budget.toLocaleString()} บาท`
+      : "Add budget"}
+  </span>
+</button>
 
 
             </div>
           </div>
-          <button className="bg-foreground text-background rounded-full px-4 py-2 text-sm font-medium flex items-center gap-2">
-            <Sparkles className="h-4 w-4" /> Create a trip
-          </button>
         </header>
 
         <div className="flex-1 px-6 overflow-y-auto">
@@ -3408,22 +3395,44 @@ hover:bg-gray-100
           </div>
 
         </div>
+{/* Welcome Hero */}
+{!hasChatStarted && (
+  <div className="travel-hero flex-1 flex flex-col items-center justify-center px-6 pb-24 text-center">
+    <div className="mb-6 flex items-center gap-2 rounded-full border border-[#e6e2d8] bg-white/70 px-4 py-2 text-sm text-[#6f776f] shadow-sm backdrop-blur">
+      <span>✦</span>
+      <span>Personalized travel planning</span>
+    </div>
 
-        {/* Chat input */}
-        <div className="px-6 pb-8"></div>
-        {!hasChatStarted && (
-          <div className="travel-hero flex-1 flex flex-col items-center justify-center px-6 text-center">
-            <div className="text-5xl mb-4">🌍✨</div>
-            <h1 className="text-3xl font-semibold tracking-tight">
-              Where to today, {user?.user_metadata?.full_name || "Guest"}?
-            </h1>
+    <h1 className="max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
+      Where will your next
+      <span className="block text-[#8b5cf6]">
+        adventure take you?
+      </span>
+    </h1>
 
-            <p className="text-muted-foreground mt-3 max-w-md">
-              Hey there, I'm here to assist you in planning your experience.<br />
-              Ask me anything travel related.
-            </p>
-          </div>
-        )}
+    <p className="mt-5 max-w-xl text-base leading-8 text-[#6f776f]">
+      Hi {user?.user_metadata?.full_name || "there"} 👋
+      <br />
+      Tell me where you want to go, and I'll help create a trip
+      <br className="hidden sm:block" />
+      that matches your style, interests, and budget.
+    </p>
+
+    <div className="mt-8 flex flex-wrap justify-center gap-3">
+      <div className="rounded-full bg-white/80 px-4 py-2 text-sm text-[#654d78] shadow-sm">
+        ✦ Personalized
+      </div>
+
+      <div className="rounded-full bg-white/80 px-4 py-2 text-sm text-[#654d78] shadow-sm">
+        🗺️ Smart itinerary
+      </div>
+
+      <div className="rounded-full bg-white/80 px-4 py-2 text-sm text-[#654d78] shadow-sm">
+        ♡ Your preferences
+      </div>
+    </div>
+  </div>
+)}
 
         {/* Chat input */}
         <div className="px-6 pb-8">
@@ -4240,7 +4249,7 @@ focus:ring-black/20
             </div>
 
           )}
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col space-y-10">
             {showTripPlan && (
   <TripPlanPanel
     key={currentChatId ?? "new"}
