@@ -8,7 +8,7 @@ interface PreferenceSectionProps {
 
 const PreferenceSection = ({ selected, onToggle, onGetRecommendations }: PreferenceSectionProps) => {
   return (
-    <section id="recommendations" className="py-20 bg-sky-light">
+    <section id="recommendations" className="py-20 bg-gradient-to-br from-amber-50 via-background to-cyan-50">
       <div className="container mx-auto px-4 text-center">
         <h2 className="text-3xl md:text-4xl font-heading font-bold text-foreground mb-3">
           Tell Us What You Like

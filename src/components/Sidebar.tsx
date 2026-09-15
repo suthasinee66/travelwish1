@@ -82,7 +82,7 @@ export default function Sidebar({
 
     const [showCreateModal, setShowCreateModal] = useState(false);
     return (
-        <aside className="w-60 shrink-0 border-r border-border flex flex-col bg-sidebar h-screen">
+        <aside className="w-60 shrink-0 border-r border-border flex flex-col bg-sidebar h-screen shadow-[8px_0_30px_rgba(8,127,140,0.08)]">
 
     {/* ================= HEADER ================= */}
     <div className="px-5 py-5 flex items-center gap-2 shrink-0">

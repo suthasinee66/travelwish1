@@ -36,7 +36,7 @@ const TravelTipsSection = () => {
           {tips.map((tip) => (
             <div
               key={tip.title}
-              className="bg-card rounded-xl p-8 border border-border hover:shadow-lg transition-all duration-300 hover:-translate-y-1 text-center"
+              className="bg-card rounded-2xl p-8 border border-border/70 shadow-sm shadow-cyan-950/5 hover:shadow-xl hover:shadow-teal-900/10 transition-all duration-300 hover:-translate-y-2 text-center"
             >
               <div className="w-14 h-14 rounded-full bg-sky-light flex items-center justify-center mx-auto mb-5">
                 <tip.icon className="w-7 h-7 text-primary" />

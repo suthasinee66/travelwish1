@@ -21,7 +21,7 @@ const PopularSection = ({ destinations }: PopularSectionProps) => {
   };
 
   return (
-    <section id="destinations" className="py-20 bg-green-soft-light">
+    <section id="destinations" className="py-20 bg-gradient-to-br from-teal-50 via-background to-orange-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between mb-12">
           <div>
