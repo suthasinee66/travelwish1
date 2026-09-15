@@ -412,3 +412,87 @@ body {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* Keep the aurora soft while giving every text layer a reliable contrast surface. */
+.travel-home {
+  --aurora-ink: #302b43;
+  --aurora-secondary: #514b65;
+  --aurora-muted: #6f687e;
+  --aurora-glass: rgba(255, 255, 255, 0.78);
+  --aurora-glass-strong: rgba(255, 255, 255, 0.9);
+  --aurora-border: rgba(117, 91, 143, 0.18);
+}
+
+.travel-home .travel-main {
+  isolation: isolate;
+}
+
+.travel-home .travel-header,
+.travel-home aside,
+.travel-home .travel-composer,
+.travel-home [role="dialog"],
+.travel-home .glass,
+.travel-home [class*="shadow"] {
+  background: var(--aurora-glass) !important;
+  border-color: var(--aurora-border) !important;
+}
+
+.travel-home .travel-header,
+.travel-home aside {
+  color: var(--aurora-ink);
+}
+
+.travel-home h1,
+.travel-home h2,
+.travel-home h3,
+.travel-home h4,
+.travel-home label,
+.travel-home strong,
+.travel-home button {
+  color: var(--aurora-ink);
+}
+
+.travel-home .travel-hero h1 {
+  background: linear-gradient(90deg, #5b4374, #9a4f80 52%, #347f8b);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.travel-home .travel-hero p,
+.travel-home p,
+.travel-home [class*="text-gray-"],
+.travel-home [class*="text-slate-"],
+.travel-home [class*="text-zinc-"] {
+  color: var(--aurora-secondary) !important;
+}
+
+.travel-home input,
+.travel-home textarea,
+.travel-home select {
+  background: rgba(255, 255, 255, 0.88) !important;
+  color: var(--aurora-ink) !important;
+}
+
+.travel-home input::placeholder,
+.travel-home textarea::placeholder {
+  color: var(--aurora-muted) !important;
+  opacity: 1;
+}
+
+.travel-home button[class*="bg-primary"],
+.travel-home button[class*="bg-blue"],
+.travel-home button[class*="bg-orange"] {
+  color: #ffffff !important;
+  text-shadow: 0 1px 1px rgba(48, 43, 67, 0.18);
+}
+
+.travel-home svg {
+  color: currentColor;
+}
+
+@media (max-width: 900px) {
+  .travel-home aside,
+  .travel-home .travel-header {
+    background: rgba(255, 255, 255, 0.86) !important;
+  }
+}
