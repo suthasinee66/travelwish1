@@ -243,9 +243,7 @@ function Trips() {
 
   return (
 
-    <div
-className="travel-trips aurora-canvas flex min-h-screen"
-    >
+<div className="travel-trips aurora-canvas flex min-h-screen text-[#49334f]">
 
 
       <Sidebar user={user}/>
@@ -262,7 +260,7 @@ className="travel-trips aurora-canvas flex min-h-screen"
 
 
         <header
-          className="travel-header sticky top-0 z-10 flex min-h-16 items-center gap-4 border-b px-4 sm:px-8"
+          className="travel-header sticky top-0 z-10 flex min-h-16 items-center gap-4 px-4 sm:px-8"
         >
 
 
@@ -343,30 +341,27 @@ className="travel-trips aurora-canvas flex min-h-screen"
 
 
         <div
-          className="mx-auto max-w-6xl px-4 py-8 sm:px-8 sm:py-10"
+          className="mx-auto max-w-7xl px-4 py-8 sm:px-8 sm:py-10"
         >
 
 
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            Upcoming Trips
-          </h2>
-
-
-          <p className="text-gray-500 mt-2">
-            {filteredTrips.length} trips planned
-          </p>
+          <div className="mb-2 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#a2779f]">Your travel journal</p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Upcoming Trips</h2>
+              <p className="mt-2 text-sm text-[#806f88]">Every plan, place, and memory in one beautiful space.</p>
+            </div>
+            <div className="rounded-2xl bg-white/55 px-4 py-3 text-right shadow-sm ring-1 ring-white/70">
+              <div className="text-2xl font-semibold">{filteredTrips.length}</div>
+              <div className="text-xs text-[#806f88]">trips planned</div>
+            </div>
+          </div>
 
 
 
 
           <div
-            className="
-              grid
-              xl:grid-cols-3
-              md:grid-cols-2
-              gap-5
-              mt-8
-            "
+            className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3"
           >
 
 
@@ -375,7 +370,7 @@ className="travel-trips aurora-canvas flex min-h-screen"
 
                onClick={() => setShowCreateModal(true)}
 
-              className="trip-create-card hover-lift flex min-h-[260px] flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed"
+              className="trip-create-card hover-lift flex min-h-[260px] flex-col items-center justify-center gap-3 rounded-[28px] border-2 border-dashed border-[#c9a8c8]/70 bg-white/35 text-[#49334f]"
 
             >
 
@@ -466,18 +461,14 @@ className="glass-surface animate-fade-up overflow-hidden rounded-3xl border-whit
 
                   }}
 
-                  className="trip-card glass-surface hover-lift overflow-hidden rounded-3xl cursor-pointer"
+                  className="trip-card glass-surface group hover-lift overflow-hidden rounded-[28px] cursor-pointer border-white/70"
 
                 >
 
 
 
                   <div
-                    className="
-                      relative
-                      h-40
-                      overflow-hidden
-                    "
+                    className="relative h-48 overflow-hidden"
                   >
 
                     <img
@@ -584,15 +575,7 @@ className="glass-surface animate-fade-up overflow-hidden rounded-3xl border-whit
 
 
                     <button
-                      className="
-                        mt-5
-                        w-full
-                        rounded-xl
-                        border
-                        py-2
-                        text-sm
-                        hover:bg-gray-50
-                      "
+                      className="mt-5 w-full rounded-full border border-[#c9a8c8]/60 bg-white/45 py-2.5 text-sm font-medium transition hover:bg-white/75"
                     >
 
                       View Trip
