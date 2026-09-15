@@ -255,3 +255,160 @@
     min-height: 18rem;
   }
 }
+
+/* Soft Pastel Aurora design system */
+:root {
+  --aurora-lavender: #c8a9d8;
+  --aurora-purple: #b89bcb;
+  --aurora-pink: #e9a8c9;
+  --aurora-rose: #f3b8d0;
+  --aurora-blue: #a9dce8;
+  --aurora-mint: #bfe5d4;
+  --aurora-cream: #fff7d6;
+  --aurora-warm: #fffdf9;
+  --aurora-ink: #3d3545;
+  --aurora-secondary: #716978;
+  --aurora-muted: #9a929f;
+  --aurora-glass: rgba(255, 255, 255, 0.56);
+  --aurora-glass-strong: rgba(255, 255, 255, 0.74);
+  --aurora-border: rgba(255, 255, 255, 0.68);
+  --aurora-shadow: 0 8px 32px rgba(100, 70, 120, 0.08);
+}
+
+body {
+  color: var(--aurora-ink);
+  background: #f8edf7;
+}
+
+.travel-home {
+  color: var(--aurora-ink);
+  background:
+    radial-gradient(circle at 12% 8%, rgba(200, 169, 216, 0.55), transparent 32%),
+    radial-gradient(circle at 88% 15%, rgba(243, 184, 208, 0.52), transparent 36%),
+    radial-gradient(circle at 94% 57%, rgba(169, 220, 232, 0.45), transparent 33%),
+    radial-gradient(circle at 16% 86%, rgba(191, 229, 212, 0.48), transparent 35%),
+    linear-gradient(135deg, #eee4f4 0%, #fbeaf3 48%, #eaf8f8 100%);
+}
+
+.travel-home aside,
+.travel-header,
+.travel-composer,
+.travel-home [class*="rounded"] {
+  border-color: var(--aurora-border) !important;
+}
+
+.travel-home aside {
+  background: rgba(255, 255, 255, 0.52) !important;
+  box-shadow: var(--aurora-shadow);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.travel-main {
+  background:
+    radial-gradient(circle at 82% 4%, rgba(233, 168, 201, 0.3), transparent 28%),
+    radial-gradient(circle at 8% 92%, rgba(169, 220, 232, 0.28), transparent 30%),
+    transparent;
+}
+
+.travel-header {
+  background: rgba(255, 255, 255, 0.35);
+  border-bottom-color: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.travel-hero h1 {
+  background: linear-gradient(90deg, #80669a, #bd78a5, #5faeb8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.travel-hero p,
+.travel-home p {
+  color: var(--aurora-secondary);
+}
+
+.travel-composer,
+.travel-home [role="dialog"],
+.travel-home .glass,
+.travel-home [class*="shadow"] {
+  background: var(--aurora-glass) !important;
+  box-shadow: var(--aurora-shadow) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.travel-composer:focus-within,
+.travel-home input:focus,
+.travel-home textarea:focus,
+.travel-home select:focus {
+  border-color: rgba(170, 130, 190, 0.65) !important;
+  box-shadow: 0 0 0 4px rgba(190, 160, 215, 0.12) !important;
+}
+
+.travel-home input,
+.travel-home textarea,
+.travel-home select {
+  background: rgba(255, 255, 255, 0.6) !important;
+  color: var(--aurora-ink) !important;
+  border-color: rgba(190, 165, 200, 0.35) !important;
+}
+
+.travel-home input::placeholder,
+.travel-home textarea::placeholder {
+  color: var(--aurora-muted);
+}
+
+.travel-home button {
+  transition: transform 200ms ease, box-shadow 200ms ease, background 200ms ease;
+}
+
+.travel-home button:hover {
+  transform: translateY(-1px);
+}
+
+.travel-home button:active {
+  transform: scale(0.98);
+}
+
+.travel-home button[class*="bg-primary"],
+.travel-home button[class*="bg-blue"],
+.travel-home button[class*="bg-orange"] {
+  background: linear-gradient(135deg, #bfa4d5, #e4a9c5) !important;
+  color: #fffdf9 !important;
+  box-shadow: 0 8px 22px rgba(130, 90, 150, 0.14);
+}
+
+.travel-home [class*="bg-gray"],
+.travel-home [class*="bg-white"] {
+  background-color: rgba(255, 255, 255, 0.56) !important;
+}
+
+.travel-home [class*="text-gray-"],
+.travel-home [class*="text-slate-"],
+.travel-home [class*="text-zinc-"] {
+  color: var(--aurora-secondary) !important;
+}
+
+.travel-home [class*="border-gray"],
+.travel-home [class*="border-slate"],
+.travel-home [class*="border-zinc"] {
+  border-color: rgba(255, 255, 255, 0.58) !important;
+}
+
+@media (max-width: 900px) {
+  .travel-home aside {
+    background: rgba(255, 255, 255, 0.68) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .travel-home *,
+  .travel-home *::before,
+  .travel-home *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
