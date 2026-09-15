@@ -244,7 +244,7 @@ function Trips() {
   return (
 
     <div
-className="aurora-canvas flex min-h-screen"
+className="travel-trips aurora-canvas flex min-h-screen"
     >
 
 
@@ -262,7 +262,7 @@ className="aurora-canvas flex min-h-screen"
 
 
         <header
-          className="travel-header sticky top-0 z-10 flex min-h-16 items-center gap-4 border-b border-white/60 bg-white/35 px-4 backdrop-blur-xl sm:px-8"
+          className="travel-header sticky top-0 z-10 flex min-h-16 items-center gap-4 border-b px-4 sm:px-8"
         >
 
 
@@ -347,7 +347,7 @@ className="aurora-canvas flex min-h-screen"
         >
 
 
-          <h2 className="text-3xl font-semibold tracking-tight text-[#49334f] sm:text-4xl">
+          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
             Upcoming Trips
           </h2>
 
@@ -375,7 +375,7 @@ className="aurora-canvas flex min-h-screen"
 
                onClick={() => setShowCreateModal(true)}
 
-              className="glass-surface hover-lift flex min-h-[260px] flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-[#c596c3]/50 text-[#654d78]"
+              className="trip-create-card hover-lift flex min-h-[260px] flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed"
 
             >
 
@@ -466,14 +466,7 @@ className="glass-surface animate-fade-up overflow-hidden rounded-3xl border-whit
 
                   }}
 
-                  className="
-                    glass-surface
-                    hover-lift
-                    overflow-hidden
-                    rounded-3xl
-                    border-white/70
-                    cursor-pointer
-                  "
+                  className="trip-card glass-surface hover-lift overflow-hidden rounded-3xl cursor-pointer"
 
                 >
 

@@ -299,3 +299,126 @@
     min-height: 18rem;
   }
 }
+
+/* Trips: warm editorial planning board */
+.travel-trips {
+  --trips-ink: #18342f;
+  --trips-moss: #2f6656;
+  --trips-sand: #f7f4ec;
+  --trips-line: #e6e2d8;
+  background: var(--trips-sand);
+}
+
+.travel-trips > main {
+  background:
+    radial-gradient(circle at 82% 8%, rgba(224, 189, 119, 0.18), transparent 22rem),
+    linear-gradient(135deg, #fbfaf6 0%, #f5f2ea 100%);
+}
+
+.travel-trips .travel-header {
+  background: rgba(251, 250, 246, 0.86);
+  border-bottom-color: rgba(230, 226, 216, 0.82);
+}
+
+.travel-trips .travel-header h1,
+.travel-trips h2,
+.travel-trips h3 {
+  color: var(--trips-ink);
+}
+
+.travel-trips .pastel-input {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(211, 208, 198, 0.9);
+}
+
+.travel-trips .pastel-input:focus {
+  border-color: #9eb8a8;
+  box-shadow: 0 0 0 4px rgba(158, 184, 168, 0.18);
+}
+
+.travel-trips .pastel-primary {
+  background: var(--trips-ink);
+  box-shadow: 0 10px 24px rgba(24, 52, 47, 0.18);
+}
+
+.travel-trips .pastel-primary:hover {
+  background: var(--trips-moss);
+}
+
+.trip-create-card {
+  border-color: #c8d3c5;
+  background: rgba(255, 255, 255, 0.48);
+  color: var(--trips-moss);
+}
+
+.trip-create-card > div {
+  background: #e9efe8;
+  color: var(--trips-moss);
+}
+
+.trip-card {
+  border-color: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 16px 36px rgba(44, 57, 49, 0.1);
+}
+
+.trip-card:hover {
+  box-shadow: 0 20px 42px rgba(44, 57, 49, 0.15);
+}
+
+.trip-card img {
+  transition: transform 300ms ease;
+}
+
+.trip-card:hover img {
+  transform: scale(1.04);
+}
+
+.trip-card [class*="bg-black"] {
+  background: rgba(24, 52, 47, 0.82);
+}
+
+.trip-card [class*="text-[#806f88]"] {
+  color: #6f776f;
+}
+
+.trip-card button {
+  border-color: #d9dfd6;
+  color: var(--trips-moss);
+  background: rgba(247, 250, 246, 0.72);
+}
+
+.trip-card button:hover {
+  background: #edf3ec;
+}
+
+.trip-modal {
+  background: rgba(255, 255, 255, 0.94);
+  border-color: rgba(255, 255, 255, 0.96);
+}
+
+.trip-modal h2 {
+  color: var(--trips-ink);
+}
+
+.trip-modal button {
+  border-color: #dfe5dd;
+  background: rgba(249, 250, 246, 0.72);
+}
+
+.trip-modal button:hover {
+  background: #edf3ec;
+  border-color: #b7cbb9;
+}
+
+@media (max-width: 640px) {
+  .travel-trips .travel-header {
+    flex-wrap: wrap;
+    padding-block: 0.75rem;
+  }
+
+  .travel-trips .travel-header > div {
+    order: 3;
+    flex-basis: 100%;
+  }
+}
