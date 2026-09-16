@@ -651,7 +651,7 @@ function SortablePlaceItem({
           w-8
           h-8
           rounded-full
-          bg-black
+          bg-[#573d63]
           text-white
           flex
           items-center
@@ -1193,17 +1193,19 @@ mapPlaces.length
 mapCenter;
 
   return (
-    <div className="flex flex-col gap-3 w-full">
+  <div className="travel-trip-plan flex flex-col gap-5 w-full">
       
 
       {/* MAP */}
       <div
-        className="
-  h-[260px]
-  rounded-2xl
-  overflow-hidden
+  className="
+    travel-trip-map
+    h-[280px]
+    rounded-3xl
+    overflow-hidden
+    relative
   "
-      >
+>
 
         <APIProvider
   apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
@@ -1238,7 +1240,7 @@ mapCenter;
         w-8
         h-8
         rounded-full
-        bg-black
+        bg-[#573d63]
         text-white
         flex
         items-center
@@ -1272,14 +1274,14 @@ mapCenter;
   <div className="flex items-start justify-between">
 
     <div>
-      <h1 className="text-xl font-bold">
-        Trip to {tripInput.province}
-      </h1>
+  <h1 className="text-xl font-bold">
+  Trip to {tripInput.province}
+</h1>
 
-      <p className="text-xs text-gray-500">
-        {tripInput.days} days itinerary
-      </p>
-    </div>
+<p className="text-xs text-gray-500">
+  {tripInput.days} days itinerary
+</p>
+</div>
 <div className="relative">
   <button
   onClick={async () => {
@@ -1297,16 +1299,14 @@ mapCenter;
     }
   }}
   className="
+    travel-hotel-button
     flex
     items-center
     gap-2
     px-4
-    py-2
+    py-2.5
     rounded-xl
     border
-    bg-white
-    hover:bg-gray-100
-    shadow-sm
     text-sm
     font-medium
   "
@@ -1317,20 +1317,20 @@ mapCenter;
 
   {hotelModal && (
     <div
-      className="
-        absolute
-        right-0
-        top-full
-        mt-2
-        w-[360px]
-        rounded-2xl
-        border
-        bg-white
-        shadow-xl
-        p-4
-        z-50
-      "
-    >
+  className="
+    travel-hotel-modal
+    absolute
+    right-0
+    top-full
+    mt-2
+    w-[360px]
+    rounded-2xl
+    border
+    shadow-xl
+    p-4
+    z-50
+  "
+>
       <input
         value={hotelSearch}
         onChange={(e) => setHotelSearch(e.target.value)}
@@ -1454,14 +1454,7 @@ justify-center
 
 
         {/* TABS */}
-        <div
-          className="
-          flex
-          gap-5
-          border-b
-          mt-3
-          "
-        >
+        <div className="travel-day-tabs flex gap-2 mt-4">
 
           {days.map((_, index) => (
 <button
@@ -1472,13 +1465,19 @@ justify-center
   }}
 
               className={`
-              text-xs
-              pb-2
-              ${selectedDay === index
-                  ? "font-bold border-b-2 border-black"
-                  : "text-gray-400"
-                }
-              `}
+  travel-day-tab
+  px-4
+  py-2
+  rounded-full
+  text-xs
+  font-medium
+  transition-all
+  ${
+    selectedDay === index
+      ? "travel-day-tab-active"
+      : "travel-day-tab-inactive"
+  }
+`}
             >
               Day {index + 1}
 
@@ -1493,14 +1492,15 @@ justify-center
 
 
         {/* PLACE LIST */}
-       <div className="mt-3 space-y-3 ml-6">
+       <div className="travel-itinerary mt-4 space-y-4">
 <div className="flex items-center justify-between">
 
-  <h2 className="text-sm font-bold">
-    Day {days[selectedDay]?.day}
-    {" "}
-    {days[selectedDay]?.title}
+  <div>
+
+  <h2 className="text-lg font-bold mt-0.5">
+    {days[selectedDay]?.title || "Your itinerary"}
   </h2>
+</div>
 
 
   <button
@@ -1510,16 +1510,15 @@ justify-center
       )
     }
     className="
-      flex
-      items-center
-      gap-1
-      text-xs
-      px-3
-      py-1.5
-      rounded-full
-      border
-      hover:bg-gray-100
-    "
+  travel-map-button
+  flex
+  items-center
+  justify-center
+  w-10
+  h-10
+  rounded-xl
+  border
+"
   >
     <img
   src={googleMapIcon}
@@ -1567,17 +1566,17 @@ key={
       routeLegs[index] && (
 
       <div
-        className="
-          ml-10
-          py-2
-          flex
-          items-center
-          gap-2
-          text-sm
-          text-gray-500
-        "
-      >
-        <div className="w-px h-6 bg-gray-300 ml-2" />
+  className="
+    travel-route-distance
+    ml-10
+    py-1.5
+    flex
+    items-center
+    gap-2
+    text-xs
+  "
+>
+        <div className="travel-route-line w-px h-7 ml-2" />
 
         <span>
           {" "}
@@ -1601,18 +1600,16 @@ key={
 
 </DndContext>
 
-<div className="flex justify-end mt-6">
+<div className="flex justify-end mt-5 pt-4 border-t border-purple-100">
   <button
     className="
-      px-5
-      py-2
-      rounded-lg
-      bg-black
-      text-white
-      text-sm
-      font-medium
-      hover:bg-gray-800
-    "
+  travel-save-button
+  px-6
+  py-2.5
+  rounded-xl
+  text-sm
+  font-semibold
+"
   >
     Save
   </button>
@@ -3436,7 +3433,7 @@ hover:bg-gray-100
 
         {/* Chat input */}
         <div className="px-6 pb-8">
-          <div className="travel-composer max-w-2xl mx-auto border border-border rounded-2xl shadow-sm bg-card">
+          <div className="travel-composer max-w-2xl mx-auto border border-border rounded-2xl shadow-sm bg-card relative">
             <input
               value={input}
               onChange={(e) => {
@@ -3479,7 +3476,7 @@ hover:bg-gray-100
     rounded-full
     border
     border-border
-    bg-background
+    bg-card
     hover:bg-accent
     transition
     text-xs
@@ -3510,24 +3507,23 @@ hover:bg-gray-100
   </span>
 </button>
 
-
-      {/* MODEL MENU */}
-      {showModelMenu && (
-        <div
-          className="
-            absolute
-            bottom-11
-            left-0
-            w-56
-            bg-card
-            border
-            border-border
-            rounded-2xl
-            shadow-xl
-            p-2
-            z-50
-          "
-        >
+{showModelMenu && (
+  <div
+    className="
+      absolute
+      bottom-11
+      left-0
+      w-56
+      bg-white
+      border
+      border-border
+      rounded-2xl
+      shadow-xl
+      p-2
+      z-[9999]
+      pointer-events-auto
+    "
+  >
 
           <div className="px-3 py-2">
             <p className="text-xs font-semibold">
@@ -3542,29 +3538,33 @@ hover:bg-gray-100
 
           {aiModels.map((model) => (
             <button
-              key={model.id}
-              type="button"
-              onClick={() => {
-                setSelectedModel(model.id);
-                setShowModelMenu(false);
-              }}
-              className={`
-                w-full
-                flex
-                items-center
-                gap-3
-                px-3
-                py-2.5
-                rounded-xl
-                text-left
-                transition
-                ${
-                  selectedModel === model.id
-                    ? "bg-accent"
-                    : "hover:bg-accent/60"
-                }
-              `}
-            >
+  key={model.id}
+  type="button"
+  onClick={(e) => {
+    e.stopPropagation();
+    setSelectedModel(model.id);
+    setShowModelMenu(false);
+  }}
+  className={`
+    w-full
+    flex
+    items-center
+    gap-3
+    px-3
+    py-2.5
+    rounded-xl
+    text-left
+    transition
+    cursor-pointer
+    relative
+    z-[10000]
+    ${
+      selectedModel === model.id
+        ? "bg-accent"
+        : "hover:bg-accent/60"
+    }
+  `}
+>
 
               <div
                 className="
@@ -4386,29 +4386,20 @@ focus:ring-black/20
                                 handleSave(c);
                                 console.log("save", c.att_id);
                               }}
-                              className={
-                                `
-absolute
-z-30
-top-2
-left-2
-rounded-full
-bg-black/40
-backdrop-blur-md
-flex
-items-center
-justify-center
-hover:bg-black/60
-transition
-${exploreOpen
-                                  ? "w-9 h-9"
-                                  : "w-7 h-7"
-                                }
-${savedIds.includes(c.att_id)
-                                  ? "bg-white/90"
-                                  : "bg-black/40"
-                                }
-
+                              className={`
+  absolute
+  z-30
+  top-2
+  left-2
+  rounded-full
+  backdrop-blur-md
+  flex
+  items-center
+  justify-center
+  transition
+  ${exploreOpen ? "w-9 h-9" : "w-7 h-7"}
+  ${savedIds.includes(c.att_id) ? "saved-heart" : ""}
+  ${savedIds.includes(c.att_id) ? "bg-white/90" : "bg-black/40"}
 `}
                             >
                               <Heart

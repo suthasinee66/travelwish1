@@ -390,9 +390,10 @@ app.post(
    START SERVER
 ============================================ */
 
-const PORT = 5050;
-const server = app.listen(5050, () => {
-  console.log("🚀 API running http://localhost:5050");
+const PORT = Number(process.env.PORT) || 5050;
+
+const server = app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 API running on port ${PORT}`);
   console.log("🖼️ Google Image API enabled");
   console.log("PID:", process.pid);
 });

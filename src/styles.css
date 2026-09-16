@@ -1,25 +1,21 @@
 @import "tailwindcss" source(none);
+
 @source "../src";
+
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design system definition.
- *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
- *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ * ============================================================
+ * TravelWise Design System
+ * Soft Colorful Aurora / Pastel
+ * ============================================================
  */
 
 @theme inline {
   --font-sans: "Noto Sans Thai", Arial, sans-serif;
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -27,31 +23,43 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
   --color-ring-offset-background: var(--background);
+
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -62,226 +70,1247 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+
+/*
+ * ============================================================
+ * ROOT
+ * ============================================================
+ */
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+
+  --background: oklch(0.985 0.012 85);
+  --foreground: #ffffff;
+
+  --card: oklch(0.998 0.004 90);
+  --card-foreground: oklch(0.3 0.035 250);
+
+  --popover: oklch(0.998 0.004 90);
+  --popover-foreground: oklch(0.3 0.035 250);
+  
+  --primary: oklch(0.7 0.12 20);
+  --primary-foreground: oklch(0.99 0.01 90);
+
+  --secondary: oklch(0.91 0.06 190);
+  --secondary-foreground: oklch(0.32 0.055 210);
+
+  --muted: oklch(0.955 0.018 85);
+  --muted-foreground: oklch(0.52 0.035 245);
+
+  --accent: oklch(100% 0.00011 271.152);
+  --accent-foreground: oklch(0.38 0.045 65);
+
+  --destructive: oklch(0.68 0.14 25);
+  --destructive-foreground: oklch(0.99 0.01 90);
+
+  --border: oklch(0.9 0.028 90);
+  --input: oklch(0.9 0.028 90);
+
+  --ring: oklch(0.72 0.1 190);
+
+  --chart-1: oklch(0.72 0.13 20);
+  --chart-2: oklch(0.72 0.1 175);
+  --chart-3: oklch(0.82 0.12 85);
+  --chart-4: oklch(0.73 0.11 300);
+  --chart-5: oklch(0.76 0.1 145);
+
+  --sidebar: oklch(0.965 0.025 185);
+  --sidebar-foreground: oklch(0.34 0.045 220);
+
+  --sidebar-primary: oklch(0.7 0.12 20);
+  --sidebar-primary-foreground: oklch(0.99 0.01 90);
+
+  --sidebar-accent: oklch(0.91 0.065 85);
+  --sidebar-accent-foreground: oklch(0.38 0.045 65);
+
+  --sidebar-border: oklch(0.89 0.04 185);
+  --sidebar-ring: oklch(0.72 0.1 190);
+
+
+  /*
+   * Aurora palette
+   */
+
+  --aurora-lavender: #c8a9d8;
+  --aurora-purple: #b89bcb;
+
+  --aurora-pink: #e9a8c9;
+  --aurora-rose: #f3b8d0;
+
+  --aurora-blue: #a9dce8;
+  --aurora-mint: #bfe5d4;
+
+  --aurora-yellow: #f7edbd;
+  --aurora-peach: #f4c4aa;
+
+  --aurora-cream: #fff7d6;
+  --aurora-warm: #fffdf9;
+
+  --aurora-ink: #302b43;
+  --aurora-secondary: #514b65;
+  --aurora-muted: #6f687e;
+
+  --aurora-glass: rgba(255, 255, 255, 0.72);
+  --aurora-glass-strong: rgba(255, 255, 255, 0.86);
+
+  --aurora-border: rgba(255, 255, 255, 0.68);
+
+  --aurora-shadow:
+    0 12px 36px rgba(100, 70, 120, 0.09);
 }
+
+
+/*
+ * ============================================================
+ * DARK MODE
+ * ============================================================
+ */
 
 .dark {
   --background: oklch(0.129 0.042 264.695);
   --foreground: oklch(0.984 0.003 247.858);
+
   --card: oklch(0.208 0.042 265.755);
   --card-foreground: oklch(0.984 0.003 247.858);
+
   --popover: oklch(0.208 0.042 265.755);
   --popover-foreground: oklch(0.984 0.003 247.858);
+
   --primary: oklch(0.929 0.013 255.508);
   --primary-foreground: oklch(0.208 0.042 265.755);
+
   --secondary: oklch(0.279 0.041 260.031);
   --secondary-foreground: oklch(0.984 0.003 247.858);
+
   --muted: oklch(0.279 0.041 260.031);
   --muted-foreground: oklch(0.704 0.04 256.788);
+
   --accent: oklch(0.279 0.041 260.031);
   --accent-foreground: oklch(0.984 0.003 247.858);
+
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.984 0.003 247.858);
+
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
+
   --ring: oklch(0.551 0.027 264.364);
+
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
+
   --sidebar: oklch(0.208 0.042 265.755);
   --sidebar-foreground: oklch(0.984 0.003 247.858);
+
   --sidebar-primary: oklch(0.488 0.243 264.376);
   --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+
   --sidebar-accent: oklch(0.279 0.041 260.031);
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
+
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
+
+/*
+ * ============================================================
+ * BASE
+ * ============================================================
+ */
+
 @layer base {
-  * { border-color: var(--color-border); }
-  html { background: #faf7ff; }
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    background: #f8edf7;
+  }
+
   body {
     min-width: 320px;
-    background: var(--color-background);
-    color: var(--color-foreground);
-    font-family: "Noto Sans Thai", sans-serif;
+
+    background:
+      radial-gradient(
+        circle at 10% 10%,
+        rgba(200, 169, 216, 0.22),
+        transparent 30%
+      ),
+      radial-gradient(
+        circle at 90% 10%,
+        rgba(243, 184, 208, 0.2),
+        transparent 30%
+      ),
+      #f8edf7;
+
+    color: var(--aurora-ink);
+
+    font-family: "Noto Sans Thai", Arial, sans-serif;
+
     line-height: 1.6;
+
     overflow-x: hidden;
   }
-  button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
-  :focus-visible { outline: 3px solid oklch(0.75 0.12 330 / 0.55); outline-offset: 3px; }
+
+  button,
+  a,
+  input,
+  textarea,
+  select {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :focus-visible {
+    outline: 3px solid oklch(0.75 0.12 330 / 0.55);
+    outline-offset: 3px;
+  }
 }
+
+
+/*
+ * ============================================================
+ * GLASS EFFECTS
+ * ============================================================
+ */
 
 .glass-surface {
   background: rgba(255, 255, 255, 0.68);
+
   border: 1px solid rgba(255, 255, 255, 0.82);
-  box-shadow: 0 18px 50px rgba(91, 72, 117, 0.10), inset 0 1px rgba(255,255,255,.75);
+
+  box-shadow:
+    0 18px 50px rgba(91, 72, 117, 0.1),
+    inset 0 1px rgba(255, 255, 255, 0.75);
+
   backdrop-filter: blur(22px);
   -webkit-backdrop-filter: blur(22px);
 }
-.glass-strong { background: rgba(255,255,255,.82); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); }
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.82);
+
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+}
+
+
+/*
+ * ============================================================
+ * AURORA BACKGROUND
+ * ============================================================
+ */
+
 .aurora-canvas {
   background:
-    radial-gradient(ellipse 70% 55% at 12% 5%, rgba(220, 198, 255, .62), transparent 68%),
-    radial-gradient(ellipse 60% 52% at 88% 0%, rgba(255, 199, 226, .56), transparent 65%),
-    radial-gradient(ellipse 70% 55% at 80% 94%, rgba(184, 226, 255, .52), transparent 67%),
-    radial-gradient(ellipse 55% 48% at 6% 96%, rgba(192, 242, 223, .44), transparent 68%),
+
+    /* lavender */
+    radial-gradient(
+      ellipse 70% 55% at 12% 5%,
+      rgba(200, 169, 216, 0.62),
+      transparent 68%
+    ),
+
+    /* pink */
+    radial-gradient(
+      ellipse 60% 52% at 88% 0%,
+      rgba(243, 184, 208, 0.58),
+      transparent 65%
+    ),
+
+    /* blue */
+    radial-gradient(
+      ellipse 70% 55% at 80% 94%,
+      rgba(169, 220, 232, 0.52),
+      transparent 67%
+    ),
+
+    /* mint */
+    radial-gradient(
+      ellipse 55% 48% at 6% 96%,
+      rgba(191, 229, 212, 0.5),
+      transparent 68%
+    ),
+
+    /* yellow */
+    radial-gradient(
+      ellipse 45% 38% at 52% 52%,
+      rgba(255, 247, 214, 0.4),
+      transparent 68%
+    ),
+
     #faf7ff;
 }
-.pastel-primary { background: #6f456f; color: white; box-shadow: 0 10px 24px rgba(111,69,111,.22); }
-.pastel-primary:hover { background: #5e385f; transform: translateY(-1px); }
-.pastel-secondary { background: rgba(226, 211, 247, .72); color: #573d63; }
-.pastel-ghost:hover { background: rgba(232, 216, 247, .48); color: #6f456f; }
-.pastel-input { background: rgba(255,255,255,.6); border-color: rgba(176,150,201,.36); }
-.pastel-input:focus { border-color: #c596c3; box-shadow: 0 0 0 4px rgba(197,150,195,.16); }
-.pastel-chip { background: rgba(230, 218, 248, .68); color: #654d78; border: 1px solid rgba(255,255,255,.72); }
-.hover-lift { transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease; }
-.hover-lift:hover { transform: translateY(-3px); box-shadow: 0 16px 32px rgba(91,72,117,.13); }
-.travel-home { min-height: 100vh; background: transparent; }
-.travel-home aside { margin: 14px; height: calc(100vh - 28px); border: 1px solid rgba(255,255,255,.82) !important; border-radius: 24px; background: rgba(255,255,255,.58) !important; box-shadow: 0 18px 42px rgba(91,72,117,.10); backdrop-filter: blur(22px); }
-.travel-main { background: transparent; }
-.travel-header { border-bottom: 1px solid rgba(255,255,255,.68); background: rgba(255,255,255,.34); backdrop-filter: blur(16px); }
-.travel-hero h1 { color: #49334f; letter-spacing: -.045em; }
-.travel-hero p { color: #806f88; }
-.travel-composer { background: rgba(255,255,255,.72) !important; border-color: rgba(255,255,255,.9) !important; box-shadow: 0 20px 42px rgba(91,72,117,.12) !important; backdrop-filter: blur(20px); }
-.travel-composer:focus-within { border-color: #c596c3 !important; box-shadow: 0 22px 48px rgba(111,69,111,.16) !important; }
-@media (max-width: 720px) {
-  .travel-home { display: block; padding-bottom: 74px; }
-  .travel-home aside { position: fixed; z-index: 40; inset: auto 10px 10px; width: auto; height: 62px; margin: 0; border-radius: 22px; }
-  .travel-home aside > div:first-child, .travel-home aside h3, .travel-home aside .flex-1.min-h-0 { display: none; }
-  .travel-home aside nav { display: flex; height: 100%; align-items: center; justify-content: space-around; padding: 0 6px; }
-  .travel-home aside nav > div { flex: 1; }
-  .travel-home aside nav a, .travel-home aside nav button { justify-content: center; padding: 10px 4px; }
-  .travel-home aside nav span { display: none; }
-  .travel-home aside nav button.mt-4 { margin-top: 0; font-size: 0; background: transparent; box-shadow: none; }
-  .travel-home aside nav button.mt-4::before { content: '+'; font-size: 24px; color: #6f456f; }
-  .travel-home aside nav svg { margin: auto; }
-}
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
 
-/* TravelWise home: warm editorial palette and calm, spacious surfaces. */
-.travel-home {
-  --travel-ink: #18342f;
-  --travel-moss: #2f6656;
-  --travel-sand: #f7f4ec;
-  --travel-line: #e6e2d8;
-  background: var(--travel-sand);
-}
 
-.travel-home aside {
-  background: rgba(255, 255, 255, 0.76) !important;
-  border-right: 1px solid var(--travel-line) !important;
-  backdrop-filter: blur(18px);
-}
+/*
+ * ============================================================
+ * PASTEL BUTTONS
+ * ============================================================
+ */
 
-.travel-main {
+.pastel-primary {
   background:
-    radial-gradient(circle at 78% 13%, rgba(224, 189, 119, 0.16), transparent 24rem),
-    linear-gradient(135deg, #fbfaf6 0%, #f5f2ea 100%);
+    linear-gradient(
+      135deg,
+      #b89bcb 0%,
+      #e9a8c9 52%,
+      #a9dce8 100%
+    );
+
+  color: white;
+
+  box-shadow:
+    0 10px 24px rgba(130, 90, 150, 0.2);
 }
 
-.travel-header {
-  border-bottom: 1px solid rgba(230, 226, 216, 0.75);
-  background: rgba(251, 250, 246, 0.82);
-  backdrop-filter: blur(16px);
-}
+.pastel-primary:hover {
+  background:
+    linear-gradient(
+      135deg,
+      #aa8dbd 0%,
+      #df96bb 52%,
+      #91cedb 100%
+    );
 
-.travel-header button {
-  transition: color 180ms ease, transform 180ms ease;
-}
-
-.travel-header button:hover {
-  color: #6f456f;
   transform: translateY(-1px);
 }
 
-.travel-header > button:last-child {
-  background: var(--travel-ink) !important;
-  box-shadow: 0 8px 20px rgba(24, 52, 47, 0.18);
+.pastel-secondary {
+  background: rgba(226, 211, 247, 0.72);
+  color: #573d63;
 }
+
+.pastel-ghost:hover {
+  background: rgba(232, 216, 247, 0.48);
+  color: #6f456f;
+}
+
+
+/*
+ * ============================================================
+ * INPUT
+ * ============================================================
+ */
+
+.pastel-input {
+  background: rgba(255, 255, 255, 0.68);
+
+  border-color: rgba(176, 150, 201, 0.36);
+}
+
+.pastel-input:focus {
+  border-color: #c596c3;
+
+  box-shadow:
+    0 0 0 4px rgba(197, 150, 195, 0.16);
+}
+
+
+/*
+ * ============================================================
+ * CHIP
+ * ============================================================
+ */
+
+.pastel-chip {
+  background: rgba(230, 218, 248, 0.68);
+
+  color: #654d78;
+
+  border: 1px solid rgba(255, 255, 255, 0.72);
+}
+
+
+/*
+ * ============================================================
+ * HOVER
+ * ============================================================
+ */
+
+.hover-lift {
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-3px);
+
+  box-shadow:
+    0 16px 32px rgba(91, 72, 117, 0.13);
+}
+
+
+/*
+ * ============================================================
+ * TRAVEL HOME
+ * ============================================================
+ */
+
+.travel-home {
+  --travel-ink: #302b43;
+
+  --travel-purple: #b89bcb;
+  --travel-lavender: #c8a9d8;
+
+  --travel-pink: #e9a8c9;
+  --travel-rose: #f3b8d0;
+
+  --travel-blue: #a9dce8;
+  --travel-mint: #bfe5d4;
+
+  --travel-yellow: #f7edbd;
+  --travel-peach: #f4c4aa;
+
+  --travel-sand: #fffafd;
+  --travel-line: rgba(117, 91, 143, 0.18);
+
+  min-height: 100vh;
+
+  color: var(--travel-ink);
+
+  background:
+
+    /* top-left lavender */
+    radial-gradient(
+      ellipse 70% 55% at 5% 5%,
+      rgba(200, 169, 216, 0.56),
+      transparent 68%
+    ),
+
+    /* top-right pink */
+    radial-gradient(
+      ellipse 65% 52% at 95% 0%,
+      rgba(243, 184, 208, 0.54),
+      transparent 68%
+    ),
+
+    /* right blue */
+    radial-gradient(
+      ellipse 58% 48% at 100% 58%,
+      rgba(169, 220, 232, 0.48),
+      transparent 68%
+    ),
+
+    /* bottom mint */
+    radial-gradient(
+      ellipse 62% 45% at 8% 100%,
+      rgba(191, 229, 212, 0.5),
+      transparent 70%
+    ),
+
+    /* center cream */
+    radial-gradient(
+      ellipse 50% 42% at 52% 48%,
+      rgba(255, 247, 214, 0.48),
+      transparent 72%
+    ),
+
+    linear-gradient(
+      135deg,
+      #eee4f4 0%,
+      #fbeaf3 42%,
+      #fff5f0 65%,
+      #eaf8f8 100%
+    );
+}
+
+
+/*
+ * ============================================================
+ * SIDEBAR
+ * ============================================================
+ */
+
+.travel-home aside {
+  margin: 14px;
+
+  height: calc(100vh - 28px);
+
+  border:
+    1px solid rgba(255, 255, 255, 0.82) !important;
+
+  border-radius: 24px;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 250, 253, 0.76),
+      rgba(239, 249, 252, 0.68)
+    ) !important;
+
+  box-shadow:
+    0 18px 42px rgba(91, 72, 117, 0.1);
+
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+
+  color: var(--travel-ink);
+}
+
+
+/*
+ * ============================================================
+ * MAIN
+ * ============================================================
+ */
+
+.travel-main {
+  background:
+
+    /* pink glow */
+    radial-gradient(
+      ellipse 55% 45% at 82% 4%,
+      rgba(233, 168, 201, 0.3),
+      transparent 70%
+    ),
+
+    /* lavender glow */
+    radial-gradient(
+      ellipse 50% 50% at 4% 12%,
+      rgba(200, 169, 216, 0.28),
+      transparent 70%
+    ),
+
+    /* blue glow */
+    radial-gradient(
+      ellipse 48% 42% at 96% 70%,
+      rgba(169, 220, 232, 0.28),
+      transparent 70%
+    ),
+
+    /* mint glow */
+    radial-gradient(
+      ellipse 55% 40% at 12% 96%,
+      rgba(191, 229, 212, 0.28),
+      transparent 70%
+    ),
+
+    transparent;
+
+  isolation: isolate;
+}
+
+
+/*
+ * ============================================================
+ * HEADER
+ * ============================================================
+ */
+
+.travel-header {
+  border-bottom:
+    1px solid rgba(255, 255, 255, 0.68);
+
+  background:
+    rgba(255, 250, 253, 0.52);
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  color: var(--travel-ink);
+}
+
+.travel-header button {
+  transition:
+    color 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.travel-header button:hover {
+  color: #a35d8b;
+
+  transform: translateY(-1px);
+}
+
+
+/*
+ * Header primary/action button
+ */
+
+.travel-header > button:last-child {
+  background:
+    linear-gradient(
+      135deg,
+      #b89bcb 0%,
+      #e9a8c9 52%,
+      #f4c4aa 100%
+    ) !important;
+
+  color: white !important;
+
+  box-shadow:
+    0 8px 22px rgba(150, 91, 130, 0.22);
+}
+
+.travel-header > button:last-child:hover {
+  box-shadow:
+    0 12px 28px rgba(150, 91, 130, 0.28);
+}
+
+
+/*
+ * ============================================================
+ * HERO
+ * ============================================================
+ */
 
 .travel-hero {
   position: relative;
+
   min-height: 21rem;
 }
 
+
+/*
+ * Decorative aurora line
+ */
+
 .travel-hero::before {
   content: "";
+
+  display: block;
+
   width: 5rem;
-  height: 0.25rem;
+  height: 0.3rem;
+
   border-radius: 999px;
-  background: #d4a85b;
+
+  background:
+    linear-gradient(
+      90deg,
+      #b89bcb 0%,
+      #e9a8c9 35%,
+      #f7edbd 65%,
+      #a9dce8 100%
+    );
+
   margin-bottom: 1.25rem;
+
+  box-shadow:
+    0 4px 14px rgba(190, 150, 205, 0.22);
 }
 
+
+/*
+ * Hero title
+ */
+
 .travel-hero h1 {
-  color: var(--travel-ink);
+  color: transparent;
+
+  background:
+    linear-gradient(
+      90deg,
+      #72578b 0%,
+      #a75c89 45%,
+      #5a9fa8 100%
+    );
+
+  -webkit-background-clip: text;
+  background-clip: text;
+
   font-size: clamp(2rem, 4vw, 3.35rem);
+
   letter-spacing: -0.045em;
+
   line-height: 1.08;
 }
 
+
+/*
+ * Hero description
+ */
+
 .travel-hero p {
-  color: #6f776f;
+  color: #655d72;
+
   font-size: 1.05rem;
+
   line-height: 1.8;
 }
 
+ /*
+  * ============================================================
+  * COMPOSER
+  * ============================================================
+  */
+
 .travel-composer {
-  border-color: rgba(211, 208, 198, 0.9) !important;
-  background: rgba(255, 255, 255, 0.92) !important;
-  box-shadow: 0 18px 40px rgba(44, 57, 49, 0.11) !important;
-  transition: box-shadow 180ms ease, border-color 180ms ease, transform 180ms ease;
+  position: relative;
+
+  border-radius: 1rem !important;
+
+  border-color:
+    rgba(255, 255, 255, 0.9) !important;
+
+  background:
+    rgba(255, 255, 255, 0.78) !important;
+
+  box-shadow:
+    0 20px 46px rgba(91, 72, 117, 0.12),
+    0 0 0 4px rgba(200, 169, 216, 0.08) !important;
+
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+
+  overflow: visible !important;
+
+  transition:
+    box-shadow 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease;
 }
 
 .travel-composer:focus-within {
-  border-color: #9eb8a8 !important;
-  box-shadow: 0 20px 46px rgba(44, 57, 49, 0.16) !important;
+  border-color:
+    rgba(183, 145, 202, 0.65) !important;
+
+  box-shadow:
+    0 22px 50px rgba(91, 72, 117, 0.16),
+    0 0 0 4px rgba(200, 169, 216, 0.14) !important;
+
   transform: translateY(-2px);
 }
 
-.travel-composer input::placeholder {
-  color: #9a9f99;
+.travel-composer input {
+  border-radius: 1rem 1rem 0 0 !important;
 }
+
+.travel-composer input::placeholder {
+  color: #8d8798;
+}
+
+/*
+ * ============================================================
+ * INPUT / TEXTAREA / SELECT
+ * ============================================================
+ */
+
+.travel-home input,
+.travel-home textarea,
+.travel-home select {
+  background:
+    rgba(255, 255, 255, 0.68) !important;
+
+  color:
+    var(--travel-ink) !important;
+
+  border-color:
+    rgba(190, 165, 200, 0.35) !important;
+}
+
+.travel-home input:focus,
+.travel-home textarea:focus,
+.travel-home select:focus {
+  border-color:
+    rgba(170, 130, 190, 0.65) !important;
+
+  box-shadow:
+    0 0 0 4px rgba(190, 160, 215, 0.12) !important;
+}
+
+.travel-home input::placeholder,
+.travel-home textarea::placeholder {
+  color: #827b91 !important;
+
+  opacity: 1;
+}
+
+
+/*
+ * ============================================================
+ * GLASS COMPONENTS
+ * ============================================================
+ */
+
+.travel-home [role="dialog"],
+.travel-home .glass,
+.travel-home [class*="shadow"] {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+
+/*
+ * ============================================================
+ * CARDS
+ * ============================================================
+ */
+
+.travel-home [class*="rounded"] {
+  border-color:
+    rgba(255, 255, 255, 0.62) !important;
+}
+
+
+/*
+ * ============================================================
+ * PRIMARY BUTTONS
+ * ============================================================
+ */
+
+.travel-home button[class*="bg-primary"],
+.travel-home button[class*="bg-blue"],
+.travel-home button[class*="bg-orange"] {
+  background:
+    linear-gradient(
+      135deg,
+      #b89bcb 0%,
+      #e9a8c9 50%,
+      #f4c4aa 100%
+    ) !important;
+
+  color:
+    #ffffff !important;
+
+  box-shadow:
+    0 8px 22px rgba(130, 90, 150, 0.16);
+
+  text-shadow:
+    0 1px 1px rgba(48, 43, 67, 0.16);
+}
+
+
+/*
+ * ============================================================
+ * GENERIC BUTTONS
+ * ============================================================
+ */
+
+.travel-home button {
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    background 200ms ease,
+    color 200ms ease;
+}
+
+.travel-home button:hover {
+  transform: translateY(-1px);
+}
+
+.travel-home button:active {
+  transform: scale(0.98);
+}
+
+
+/*
+ * ============================================================
+ * TEXT
+ * ============================================================
+ */
+
+.travel-home h1,
+.travel-home h2,
+.travel-home h3,
+.travel-home h4,
+.travel-home label,
+.travel-home strong,
+.travel-home button {
+  color: var(--travel-ink);
+}
+
+.travel-home p {
+  color: #655d72;
+}
+
+.travel-home [class*="text-gray-"],
+.travel-home [class*="text-slate-"],
+.travel-home [class*="text-zinc-"] {
+  color: #655d72 !important;
+}
+
+
+/*
+ * ============================================================
+ * GRAY / WHITE BACKGROUNDS
+ * Keep old component layout but make surfaces pastel glass.
+ * ============================================================
+ */
+
+.travel-home [class*="bg-gray"],
+.travel-home [class*="bg-white"] {
+  background-color:
+    rgba(255, 255, 255, 0.58) !important;
+}
+
+
+/*
+ * ============================================================
+ * BORDERS
+ * ============================================================
+ */
+
+.travel-home [class*="border-gray"],
+.travel-home [class*="border-slate"],
+.travel-home [class*="border-zinc"] {
+  border-color:
+    rgba(255, 255, 255, 0.62) !important;
+}
+
+
+/*
+ * ============================================================
+ * SVG / ICONS
+ * ============================================================
+ */
+
+.travel-home svg {
+  color: currentColor;
+}
+
+
+/*
+ * ============================================================
+ * MOBILE
+ * ============================================================
+ */
 
 @media (max-width: 900px) {
   .travel-main {
     padding-right: 0 !important;
   }
+
+  .travel-home aside {
+    background:
+      rgba(255, 255, 255, 0.78) !important;
+  }
+
+  .travel-home .travel-header {
+    background:
+      rgba(255, 255, 255, 0.78) !important;
+  }
+}
+
+
+@media (max-width: 720px) {
+  .travel-home {
+    display: block;
+
+    padding-bottom: 74px;
+  }
+
+  .travel-home aside {
+    position: fixed;
+
+    z-index: 40;
+
+    inset:
+      auto 10px 10px;
+
+    width: auto;
+
+    height: 62px;
+
+    margin: 0;
+
+    border-radius: 22px;
+  }
+
+  .travel-home aside > div:first-child,
+  .travel-home aside h3,
+  .travel-home aside .flex-1.min-h-0 {
+    display: none;
+  }
+
+  .travel-home aside nav {
+    display: flex;
+
+    height: 100%;
+
+    align-items: center;
+
+    justify-content: space-around;
+
+    padding: 0 6px;
+  }
+
+  .travel-home aside nav > div {
+    flex: 1;
+  }
+
+  .travel-home aside nav a,
+  .travel-home aside nav button {
+    justify-content: center;
+
+    padding: 10px 4px;
+  }
+
+  .travel-home aside nav span {
+    display: none;
+  }
+
+  .travel-home aside nav button.mt-4 {
+    margin-top: 0;
+
+    font-size: 0;
+
+    background: transparent;
+
+    box-shadow: none;
+  }
+
+  .travel-home aside nav button.mt-4::before {
+    content: "+";
+
+    font-size: 24px;
+
+    color: #9a639c;
+  }
+
+  .travel-home aside nav svg {
+    margin: auto;
+  }
+}
+
+
+@media (max-width: 640px) {
+  .travel-header {
+    padding-inline: 1rem;
+  }
+
+  .travel-header > div {
+    gap: 0.75rem;
+  }
+
+  .travel-hero {
+    min-height: 18rem;
+  }
+}
+
+
+/*
+ * ============================================================
+ * REDUCED MOTION
+ * ============================================================
+ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+
+    transition-duration:
+      0.01ms !important;
+
+    animation-duration:
+      0.01ms !important;
+  }
+}
+
+/*
+ * ============================================================
+ * EXPLORE IMAGE BUTTONS
+ * ============================================================
+ */
+
+.travel-home button[class*="bg-black"] {
+  background-color: rgba(165, 164, 164, 0.72) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(91, 72, 117, 0.12);
+  
+}
+
+.travel-home button[class*="bg-black"]:hover {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  color: #6f456f !important;
+}
+
+.travel-home button[class*="bg-black"] svg {
+  color: currentColor !important;
+}
+.travel-home button.saved-heart {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  color: #f43f5e !important;
+}
+
+.travel-home button.saved-heart svg {
+  color: #f43f5e !important;
+}
+
+/*
+ * ============================================================
+ * AI MODEL MENU
+ * ============================================================
+ */
+
+.travel-home .travel-composer .absolute {
+  background: #fffafd !important;
+  background-color: #fffafd !important;
+  opacity: 1 !important;
+  border-color: #eadfeb !important;
+}
+.travel-header {
+  border-radius: 0 0 24px 24px !important;
+}
+/* =====================================================
+   TRIP PLAN PANEL
+   ===================================================== */
+
+.travel-home .travel-trip-plan {
+  color: var(--travel-ink);
+}
+
+/* Map */
+.travel-home .travel-trip-map {
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 12px 30px rgba(48, 43, 67, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* Header */
+.travel-home .travel-trip-header {
+  padding: 2px 2px 0;
+}
+
+.travel-home .travel-trip-icon {
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 11px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(200, 169, 216, 0.45),
+      rgba(233, 168, 201, 0.35)
+    );
+
+  border: 1px solid rgba(184, 155, 203, 0.25);
+
+  box-shadow:
+    0 5px 14px rgba(184, 155, 203, 0.16);
+}
+
+/* Hotel */
+.travel-home .travel-hotel-button {
+  background: rgba(255, 255, 255, 0.72) !important;
+  border-color: rgba(184, 155, 203, 0.28) !important;
+
+  box-shadow:
+    0 5px 15px rgba(48, 43, 67, 0.06);
+}
+
+.travel-home .travel-hotel-button:hover {
+  background: rgba(200, 169, 216, 0.18) !important;
+  border-color: rgba(184, 155, 203, 0.45) !important;
+  transform: translateY(-1px);
+}
+
+/* Day tabs */
+.travel-home .travel-day-tabs {
+  padding: 4px;
+
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+
+  border-radius: 16px;
+}
+
+.travel-home .travel-day-tab {
+  border: 1px solid transparent !important;
+}
+
+.travel-home .travel-day-tab-active {
+  color: #ffffff !important;
+
+  background:
+    linear-gradient(
+      135deg,
+      #b89bcb,
+      #d69bc0
+    );
+
+  box-shadow:
+    0 5px 14px rgba(184, 155, 203, 0.25);
+}
+
+.travel-home .travel-day-tab-inactive {
+  color: #777080 !important;
+}
+
+.travel-home .travel-day-tab-inactive:hover {
+  color: #8d68a4 !important;
+  background: rgba(200, 169, 216, 0.13);
+}
+
+/* Itinerary */
+.travel-home .travel-itinerary {
+  padding-left: 2px;
+}
+
+/* Google Maps button */
+.travel-home .travel-map-button {
+  background: rgba(255, 255, 255, 0.75) !important;
+  border-color: rgba(184, 155, 203, 0.25) !important;
+
+  box-shadow:
+    0 5px 14px rgba(48, 43, 67, 0.07);
+}
+
+.travel-home .travel-map-button:hover {
+  background: rgba(200, 169, 216, 0.18) !important;
+  border-color: rgba(184, 155, 203, 0.45) !important;
+}
+
+/* Distance */
+.travel-home .travel-route-distance {
+  color: #8b8391;
+}
+
+.travel-home .travel-route-line {
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(184, 155, 203, 0.5),
+      rgba(233, 168, 201, 0.25)
+    );
+}
+
+/* Save */
+.travel-home .travel-save-button {
+  color: #ffffff !important;
+
+  background:
+    linear-gradient(
+      135deg,
+      #b89bcb,
+      #d99abd
+    );
+
+  box-shadow:
+    0 8px 20px rgba(184, 155, 203, 0.25);
+}
+
+.travel-home .travel-save-button:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 12px 24px rgba(184, 155, 203, 0.32);
+}
+/* Hotel Search Modal - Solid */
+.travel-home .travel-hotel-modal {
+  background: #ffffff !important;
+  opacity: 1 !important;
+
+  border: 1px solid #e6ddea !important;
+
+  box-shadow:
+    0 20px 45px rgba(48, 43, 67, 0.18),
+    0 5px 15px rgba(48, 43, 67, 0.08);
+
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }

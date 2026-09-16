@@ -2,7 +2,6 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import axios from "axios";
-import * as cheerio from "cheerio";
 
 dotenv.config();
 
@@ -10,9 +9,47 @@ const app = express();
 
 app.use(cors());
 
-app.use(express.json({
-  limit: "20mb"
-}));
+app.use(
+  express.json({
+    limit: "20mb",
+  })
+);
+
+// ============================================
+// OKMD API KEYS
+// ============================================
+
+const OKMD_API_KEYS = [
+  process.env.OKMD_API_KEY_1,
+  process.env.OKMD_API_KEY_2,
+].filter(Boolean);
+
+let currentOKMDKeyIndex = 0;
+
+function getOKMDKey() {
+  if (OKMD_API_KEYS.length === 0) {
+    return null;
+  }
+
+  return OKMD_API_KEYS[currentOKMDKeyIndex];
+}
+
+function switchOKMDKey() {
+  if (OKMD_API_KEYS.length <= 1) {
+    return;
+  }
+
+  currentOKMDKeyIndex =
+    (currentOKMDKeyIndex + 1) % OKMD_API_KEYS.length;
+
+  console.log(
+    `🔄 เปลี่ยนเป็น OKMD API Key ${currentOKMDKeyIndex + 1}`
+  );
+}
+
+// ============================================
+// PLACE IMAGE - SERP API
+// ============================================
 
 async function checkImage(url) {
   try {
@@ -21,23 +58,28 @@ async function checkImage(url) {
       responseType: "stream",
     });
 
-    const contentType = response.headers["content-type"];
+    const contentType =
+      response.headers["content-type"];
 
     return (
       response.status === 200 &&
       contentType &&
       contentType.startsWith("image")
     );
-
   } catch (error) {
     return false;
   }
 }
+
 app.get("/api/place-image", async (req, res) => {
   try {
     const { name, province } = req.query;
 
-    const query = `${name} ${province} Thailand scenic landscape viewpoint travel photography`;
+    const query =
+      `${name} ${province} Thailand scenic landscape viewpoint travel photography`;
+
+    console.log("===== QUERY =====");
+    console.log(query);
 
     const result = await axios.get(
       "https://serpapi.com/search.json",
@@ -50,97 +92,94 @@ app.get("/api/place-image", async (req, res) => {
         },
       }
     );
-console.log("===== QUERY =====");
-console.log(query);
 
-console.log("===== RESULT =====");
-console.log(JSON.stringify(result.data, null, 2));
+    const images =
+      result.data.images_results || [];
 
-    const images = result.data.images_results || [];
+    const candidates = images
+      .filter((item) => item.original)
+      .map((item) => item.original);
 
+    const blocked = [
+      "facebook",
+      "fbcdn",
+      "fbsbx",
+      "tiktok",
+      "musical.ly",
+      "pinterest",
+      "pinimg",
+      "twitter",
+      "x.com",
+      "instagram",
+      "youtube",
+      "i.ytimg",
+    ];
 
-// เอาเฉพาะ URL ที่มี original
-const candidates = images
-  .filter(item => item.original)
-  .map(item => item.original);
+    const filteredImages =
+      candidates.filter((url) => {
+        const lower = url.toLowerCase();
 
+        return !blocked.some((domain) =>
+          lower.includes(domain)
+        );
+      });
 
+    const validImages = [];
 
-const blocked = [
-  "facebook",
-  "fbcdn",
-  "fbsbx",
-  "tiktok",
-  "musical.ly",
-  "pinterest",
-  "pinimg",
-  "twitter",
-  "x.com",
-  "instagram",
-  "youtube",
-  "i.ytimg"
-];
+    for (const url of filteredImages) {
+      if (validImages.length >= 5) {
+        break;
+      }
 
+      const isValid =
+        await checkImage(url);
 
-// ตัดเว็บที่ไม่ต้องการ
-const filteredImages = candidates.filter(url => {
+      console.log(
+        isValid
+          ? "✅ ใช้รูป:"
+          : "❌ รูปเสีย:",
+        url
+      );
 
-  const lower = url.toLowerCase();
+      if (isValid) {
+        validImages.push(url);
+      }
+    }
 
-  return !blocked.some(domain =>
-    lower.includes(domain)
-  );
+    console.log(
+      "================ IMAGE RESULT ================"
+    );
 
-});
+    console.log(
+      "ทั้งหมดจาก SerpAPI:",
+      images.length
+    );
 
+    console.log(
+      "ผ่าน filter:",
+      filteredImages.length
+    );
 
+    console.log(
+      "รูปใช้งานได้:",
+      validImages.length
+    );
 
-// เช็คว่าเปิดรูปได้จริง
-const validImages = [];
+    return res.json({
+      images: validImages,
+    });
 
-
-for (const url of filteredImages) {
-
-  if(validImages.length >= 5){
-    break;
-  }
-
-
-  const isValid = await checkImage(url);
-
-
-  console.log(
-    isValid ? "✅ ใช้รูป:" : "❌ รูปเสีย:",
-    url
-  );
-
-
-  if(isValid){
-    validImages.push(url);
-  }
-
-}
-
-
-
-console.log("================ IMAGE RESULT ================");
-console.log("ทั้งหมดจาก SerpAPI:", images.length);
-console.log("ผ่าน filter:", filteredImages.length);
-console.log("รูปใช้งานได้:", validImages.length);
-
-
-
-res.json({
-  images: validImages
-});
   } catch (err) {
-    console.error(err.response?.data || err.message);
-    res.json({
-  images:[]
-});
+    console.error(
+      err.response?.data ||
+      err.message
+    );
+
+    return res.json({
+      images: [],
+    });
   }
 });
-
 
 // ============================================
 // OKMD AI
@@ -155,52 +194,64 @@ const OKMD_MODELS = {
   gemini: "gemini-3.7-flash",
 };
 
-
 app.post("/api/ai", async (req, res) => {
-
   try {
-
     const {
       model,
       prompt,
     } = req.body;
 
-    console.log("====================================");
-    console.log("🤖 OKMD AI REQUEST");
-    console.log("Model:", model);
-    console.log("Prompt Length:", prompt?.length);
-    console.log("====================================");
+    console.log(
+      "===================================="
+    );
 
-    // ตรวจสอบ model
-    if (!model || !OKMD_MODELS[model]) {
+    console.log(
+      "🤖 OKMD AI REQUEST"
+    );
 
+    console.log(
+      "Model:",
+      model
+    );
+
+    console.log(
+      "Prompt Length:",
+      prompt?.length
+    );
+
+    console.log(
+      "===================================="
+    );
+
+    // ตรวจสอบ Model
+    if (
+      !model ||
+      !OKMD_MODELS[model]
+    ) {
       return res.status(400).json({
         error: "Invalid AI model",
-        availableModels: Object.keys(OKMD_MODELS),
+        availableModels:
+          Object.keys(OKMD_MODELS),
       });
-
     }
 
-    // ตรวจสอบ prompt
+    // ตรวจสอบ Prompt
     if (!prompt) {
-
       return res.status(400).json({
         error: "Prompt is required",
       });
-
     }
 
-    // ตรวจ API Key
-    if (!process.env.OKMD_API_KEY) {
-
+    // ตรวจสอบ API Keys
+    if (OKMD_API_KEYS.length === 0) {
       console.error(
-        "❌ OKMD_API_KEY ไม่มีใน server/.env"
+        "❌ ไม่มี OKMD API Key"
       );
 
       return res.status(500).json({
-        error: "OKMD_API_KEY is not configured",
+        error:
+          "OKMD API keys are not configured",
       });
-
     }
 
     const modelId =
@@ -211,42 +262,124 @@ app.post("/api/ai", async (req, res) => {
       modelId
     );
 
-    const start = performance.now();
+    const start =
+      performance.now();
 
-    const response = await axios.post(
-      `${OKMD_BASE_URL}/chat/completions`,
-      {
-        model: modelId,
+    let response = null;
 
-        messages: [
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
+    // ========================================
+    // ลอง API KEY ทั้งหมด
+    // ========================================
 
-        temperature: 0.2,
+    for (
+      let attempt = 0;
+      attempt < OKMD_API_KEYS.length;
+      attempt++
+    ) {
 
-        max_tokens: 12000,
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
+      const apiKey =
+        getOKMDKey();
 
-          Authorization:
-            `Bearer ${process.env.OKMD_API_KEY}`,
-        },
+      console.log(
+        `🔑 ใช้ OKMD API Key ${
+          currentOKMDKeyIndex + 1
+        }`
+      );
 
-        timeout:  300000,
+      try {
+
+        response =
+          await axios.post(
+            `${OKMD_BASE_URL}/chat/completions`,
+            {
+              model: modelId,
+
+              messages: [
+                {
+                  role: "user",
+                  content: prompt,
+                },
+              ],
+
+              temperature: 0.2,
+
+              max_tokens: 12000,
+            },
+            {
+              headers: {
+                "Content-Type":
+                  "application/json",
+
+                Authorization:
+                  `Bearer ${apiKey}`,
+              },
+
+              timeout: 300000,
+            }
+          );
+
+        // สำเร็จ
+        break;
+
+      } catch (error) {
+
+        const status =
+          error.response?.status;
+
+        console.error(
+          `❌ OKMD Key ${
+            currentOKMDKeyIndex + 1
+          } ERROR:`,
+          status
+        );
+
+        console.error(
+          "Data:",
+          error.response?.data
+        );
+
+        // ถ้า Key มีปัญหา
+        if (
+          status === 401 ||
+          status === 403 ||
+          status === 429
+        ) {
+
+          console.log(
+            `⚠️ Key ${
+              currentOKMDKeyIndex + 1
+            } ใช้งานไม่ได้`
+          );
+
+          switchOKMDKey();
+
+          continue;
+        }
+
+        // Error อื่น
+        throw error;
       }
-    );
+    }
 
-    const end = performance.now();
+    // ไม่มี Key ไหนใช้งานได้
+    if (!response) {
 
-    const data = response.data;
+      return res.status(503).json({
+        error:
+          "All OKMD API keys failed",
+      });
+
+    }
+
+    const end =
+      performance.now();
+
+    const data =
+      response.data;
 
     const content =
-      data?.choices?.[0]?.message?.content;
+      data?.choices?.[0]
+        ?.message?.content;
 
     console.log(
       `✅ OKMD ตอบกลับใน ${(
@@ -270,7 +403,9 @@ app.post("/api/ai", async (req, res) => {
       data?.usage
     );
 
-    console.log("====================================");
+    console.log(
+      "===================================="
+    );
 
     if (!content) {
 
@@ -279,23 +414,23 @@ app.post("/api/ai", async (req, res) => {
       );
 
       return res.status(500).json({
-        error: "OKMD returned empty response",
+        error:
+          "OKMD returned empty response",
         raw: data,
       });
-
     }
 
     return res.json({
-
       content,
 
-      model: data?.model,
+      model:
+        data?.model,
 
-      usage: data?.usage,
+      usage:
+        data?.usage,
 
       model_quota:
         data?.model_quota,
-
     });
 
   } catch (error) {
@@ -322,18 +457,38 @@ app.post("/api/ai", async (req, res) => {
     return res.status(
       error.response?.status || 500
     ).json({
-
       error:
         error.response?.data ||
         error.message ||
         "OKMD API error",
-
     });
-
   }
-
 });
 
-app.listen(5000, () => {
-  console.log("API running http://localhost:5000");
-});
+// ============================================
+// START SERVER
+// ============================================
+
+const PORT =
+  process.env.PORT || 5000;
+
+app.listen(
+  PORT,
+  "0.0.0.0",
+  () => {
+
+    console.log(
+      `🚀 API running on port ${PORT}`
+    );
+
+    console.log(
+      `🔑 OKMD Keys configured: ${
+        OKMD_API_KEYS.length
+      }`
+    );
+
+    console.log(
+      "🖼️ Place Image API enabled"
+    );
+  }
+);
