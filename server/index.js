@@ -347,9 +347,13 @@ app.post("/api/ai", async (req, res) => {
     const content =
       response.choices?.[0]?.message?.content;
 
+      
     console.log("====================================");
     console.log("🤖 OKMD AI RESPONSE");
-
+console.log("🔍 RAW OKMD RESPONSE:");
+console.log(
+  JSON.stringify(response, null, 2)
+);
     console.log(
       "Model:",
       response.model
