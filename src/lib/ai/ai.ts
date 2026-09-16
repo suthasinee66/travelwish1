@@ -3,13 +3,15 @@ export type AIModel =
     | "gpt"
     | "gemini";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export async function generateWithSelectedModel(
     selectedModel: AIModel,
     prompt: string
 ): Promise<string> {
 
     const response = await fetch(
-        "http://localhost:5000/api/ai",
+        `${API_URL}/api/ai`,
         {
             method: "POST",
 
