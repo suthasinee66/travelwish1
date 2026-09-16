@@ -8,7 +8,6 @@ dotenv.config();
 
 const app = express();
 
-
 app.use(cors());
 
 app.use(
@@ -18,36 +17,34 @@ app.use(
 );
 
 // ============================================
-// OKMD API KEYS
+// OPENROUTER
 // ============================================
 
-const OKMD_API_KEYS = [
-  process.env.OKMD_API_KEY_1,
-  process.env.OKMD_API_KEY_2,
-].filter(Boolean);
+const OPENROUTER_BASE_URL =
+  "https://openrouter.ai/api/v1";
 
-let currentOKMDKeyIndex = 0;
+const OPENROUTER_API_KEY =
+  process.env.OPENROUTER_API_KEY;
 
-function getOKMDKey() {
-  if (OKMD_API_KEYS.length === 0) {
-    return null;
-  }
+const openRouterAI = new OpenAI({
+  baseURL: OPENROUTER_BASE_URL,
+  apiKey: OPENROUTER_API_KEY,
+});
 
-  return OKMD_API_KEYS[currentOKMDKeyIndex];
-}
+// ============================================
+// OPENROUTER MODELS
+// ============================================
+//
+// ตอนนี้ใช้ openrouter/free สำหรับทดสอบเท่านั้น
+// หลังจากเลือกโมเดลฟรีที่เหมาะกับ TravelWish แล้ว
+// ให้เปลี่ยนค่าเหล่านี้เป็น model ID จริง
+//
 
-function switchOKMDKey() {
-  if (OKMD_API_KEYS.length <= 1) {
-    return;
-  }
-
-  currentOKMDKeyIndex =
-    (currentOKMDKeyIndex + 1) % OKMD_API_KEYS.length;
-
-  console.log(
-    `🔄 เปลี่ยนเป็น OKMD API Key ${currentOKMDKeyIndex + 1}`
-  );
-}
+const OPENROUTER_MODELS = {
+  gemini: "google/gemini-3.7-flash",
+  gpt: "openai/gpt-5.6-sol",
+  claude: "anthropic/claude-sonnet-5",
+};
 
 // ============================================
 // PLACE IMAGE - SERP API
@@ -184,174 +181,123 @@ app.get("/api/place-image", async (req, res) => {
 });
 
 // ============================================
-// OKMD AI
+// OPENROUTER AI
 // ============================================
 
-const OKMD_BASE_URL =
-  "https://gen.ai.kku.ac.th/okmd/api/v1";
-
-const OKMD_MODELS = {
-  claude: "claude-sonnet-5",
-  gpt: "gpt-5.4",
-  gemini: "gemini-3.7-flash",
-};
 app.post("/api/ai", async (req, res) => {
   try {
     const { model, prompt } = req.body;
 
     console.log("====================================");
-    console.log("🤖 OKMD AI REQUEST");
+    console.log("🤖 OPENROUTER AI REQUEST");
     console.log("Model:", model);
-    console.log("Prompt Length:", prompt?.length);
+    console.log(
+      "Prompt Length:",
+      prompt?.length
+    );
     console.log("====================================");
 
+    // ========================================
     // ตรวจสอบ Model
-    if (!model || !OKMD_MODELS[model]) {
+    // ========================================
+
+    if (
+      !model ||
+      !OPENROUTER_MODELS[model]
+    ) {
       return res.status(400).json({
         error: "Invalid AI model",
-        availableModels: Object.keys(OKMD_MODELS),
+        availableModels:
+          Object.keys(OPENROUTER_MODELS),
       });
     }
 
+    // ========================================
     // ตรวจสอบ Prompt
+    // ========================================
+
     if (!prompt) {
       return res.status(400).json({
         error: "Prompt is required",
       });
     }
 
-    // ตรวจสอบ API Keys
-    if (OKMD_API_KEYS.length === 0) {
-      console.error("❌ ไม่มี OKMD API Key");
+    // ========================================
+    // ตรวจสอบ API Key
+    // ========================================
+
+    if (!OPENROUTER_API_KEY) {
+      console.error(
+        "❌ OPENROUTER_API_KEY ไม่ได้ตั้งค่า"
+      );
 
       return res.status(500).json({
-        error: "OKMD API keys are not configured",
+        error:
+          "OpenRouter API key is not configured",
       });
     }
 
-    const modelId = OKMD_MODELS[model];
+    const modelId =
+      OPENROUTER_MODELS[model];
 
     console.log(
-      "📡 ส่งไป OKMD model:",
+      "📡 ส่งไป OpenRouter model:",
       modelId
     );
 
-    const start = performance.now();
-
-    let response = null;
+    const start =
+      performance.now();
 
     // ========================================
-    // ลอง API KEY ทั้งหมด
+    // เรียก OpenRouter
     // ========================================
 
-    for (
-      let attempt = 0;
-      attempt < OKMD_API_KEYS.length;
-      attempt++
-    ) {
-      const apiKey = getOKMDKey();
+    const response =
+      await openRouterAI.chat.completions.create({
+        model: modelId,
 
-      console.log(
-        `🔑 ใช้ OKMD API Key ${
-          currentOKMDKeyIndex + 1
-        }`
-      );
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a helpful travel planning assistant. Return valid JSON only.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
 
-      try {
-        const okmdAI = new OpenAI({
-          baseURL: OKMD_BASE_URL,
-          apiKey: apiKey,
-        });
+        temperature: 0.2,
 
-        response =
-          await okmdAI.chat.completions.create({
-            model: modelId,
-
-            messages: [
-              {
-                role: "system",
-                content:
-                  "You are a helpful travel planning assistant. Return valid JSON only.",
-              },
-              {
-                role: "user",
-                content: prompt,
-              },
-            ],
-
-            temperature: 0.2,
-
-            max_tokens: 12000,
-
-            response_format: {
-              type: "json_object",
-            },
-          });
-
-        console.log("✅ OKMD API สำเร็จ");
-
-        break;
-
-      } catch (error) {
-        const status =
-          error.status ||
-          error.response?.status;
-
-        console.error(
-          `❌ OKMD Key ${
-            currentOKMDKeyIndex + 1
-          } ERROR:`,
-          status
-        );
-
-        console.error(
-          "Message:",
-          error.message
-        );
-
-        // 401 / 403 / 429
-        // ลอง API Key ถัดไป
-        if (
-          status === 401 ||
-          status === 403 ||
-          status === 429
-        ) {
-          console.log(
-            `⚠️ Key ${
-              currentOKMDKeyIndex + 1
-            } ใช้งานไม่ได้`
-          );
-
-          switchOKMDKey();
-
-          continue;
-        }
-
-        throw error;
-      }
-    }
-
-    // ไม่มี Key ใช้งานได้
-    if (!response) {
-      return res.status(503).json({
-        error: "All OKMD API keys failed",
+        max_tokens: 12000,
       });
-    }
 
-    const end = performance.now();
+    const end =
+      performance.now();
 
     // ========================================
-    // อ่าน Response จาก OpenAI SDK
+    // อ่าน Response
     // ========================================
 
     const content =
       response.choices?.[0]?.message?.content;
 
-    console.log("====================================");
-    console.log("🤖 OKMD AI RESPONSE");
+    console.log(
+      "===================================="
+    );
 
     console.log(
-      "Model:",
+      "🤖 OPENROUTER AI RESPONSE"
+    );
+
+    console.log(
+      "Requested Model:",
+      modelId
+    );
+
+    console.log(
+      "Actual Model:",
       response.model
     );
 
@@ -372,30 +318,44 @@ app.post("/api/ai", async (req, res) => {
       ).toFixed(2)} วินาที`
     );
 
-    console.log("====================================");
+    console.log(
+      "===================================="
+    );
 
-    // ไม่มี content
+    // ========================================
+    // ไม่มี Content
+    // ========================================
+
     if (!content) {
       console.error(
-        "❌ OKMD ไม่มี content"
+        "❌ OpenRouter ไม่มี content"
       );
 
       return res.status(500).json({
-        error: "OKMD returned empty response",
+        error:
+          "OpenRouter returned empty response",
         raw: response,
       });
     }
 
+    // ========================================
+    // ส่งกลับ Frontend
+    // ========================================
+
     return res.json({
       content: content,
 
-      model: response.model,
+      model:
+        response.model,
 
-      usage: response.usage,
+      usage:
+        response.usage,
     });
 
   } catch (error) {
-    console.error("❌ OKMD ERROR");
+    console.error(
+      "❌ OPENROUTER ERROR"
+    );
 
     console.error(
       "Status:",
@@ -420,7 +380,7 @@ app.post("/api/ai", async (req, res) => {
       error:
         error.response?.data ||
         error.message ||
-        "OKMD API error",
+        "OpenRouter API error",
     });
   }
 });
@@ -442,9 +402,15 @@ app.listen(
     );
 
     console.log(
-      `🔑 OKMD Keys configured: ${
-        OKMD_API_KEYS.length
+      `🔑 OpenRouter API Key: ${
+        OPENROUTER_API_KEY
+          ? "configured"
+          : "missing"
       }`
+    );
+
+    console.log(
+      "🤖 OpenRouter AI enabled"
     );
 
     console.log(
