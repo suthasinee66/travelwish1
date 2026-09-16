@@ -262,35 +262,72 @@ app.post("/api/ai", async (req, res) => {
           baseURL: OKMD_BASE_URL,
           apiKey: apiKey,
         });
+response =
+  await okmdAI.chat.completions.create({
+    model: modelId,
 
-        response =
-          await okmdAI.chat.completions.create({
-            model: modelId,
+    messages: [
+      {
+        role: "system",
+        content:
+          "You are a helpful travel planning assistant. Return valid JSON only.",
+      },
+      {
+        role: "user",
+        content: prompt,
+      },
+    ],
 
-            messages: [
-              {
-                role: "system",
-                content:
-                  "You are a helpful travel planning assistant. Return valid JSON only.",
-              },
-              {
-                role: "user",
-                content: prompt,
-              },
-            ],
+    temperature: 0.2,
 
-            temperature: 0.2,
+    max_tokens: 12000,
 
-            max_tokens: 12000,
+    response_format: {
+      type: "json_object",
+    },
+  });
 
-            response_format: {
-              type: "json_object",
-            },
-          });
+// ตรวจว่า OKMD ส่ง error กลับมา
+if (response?.error) {
+  const status = response.error.code;
 
-        console.log("✅ OKMD API สำเร็จ");
+  console.error(
+    `❌ OKMD Key ${
+      currentOKMDKeyIndex + 1
+    } ERROR:`,
+    status
+  );
 
-        break;
+  console.error(
+    "Message:",
+    response.error.message
+  );
+
+  if (
+    status === 401 ||
+    status === 403 ||
+    status === 429
+  ) {
+    console.log(
+      `⚠️ Key ${
+        currentOKMDKeyIndex + 1
+      } ใช้งานไม่ได้`
+    );
+
+    switchOKMDKey();
+
+    continue;
+  }
+
+  throw new Error(
+    response.error.message ||
+    "OKMD API error"
+  );
+}
+
+console.log("✅ OKMD API สำเร็จ");
+
+break;
 
       } catch (error) {
         const status =
